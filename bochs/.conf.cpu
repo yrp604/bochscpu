@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# .conf.cpu
+#
+
+CC="clang"
+CXX="clang++"
+#CFLAGS="-Wall -O3 -fomit-frame-pointer -pipe"    # for speed
+CFLAGS="-Wall -g -pipe -fsanitize=address -fPIC"        # for development
+CXXFLAGS="$CFLAGS"
+
+export CC
+export CXX
+export CFLAGS
+export CXXFLAGS
+
+# NOTE: we might want configurable-msrs
+./configure \
+  --enable-all-optimizations \
+  --enable-cpu-level=6 \
+  --enable-x86-64 \
+  --enable-vmx=2 \
+  --enable-pci \
+  --enable-instrumentation=../cabi \
+  --enable-show-ips \
+  --enable-smp \
+  --disable-disasm \
+  --disable-configurable-msrs \
+  --with-nogui \
+  ${CONFIGURE_ARGS}
