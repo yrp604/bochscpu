@@ -2,13 +2,20 @@
 #![feature(trait_alias)]
 
 #[macro_use]
+extern crate ctor;
+#[macro_use]
 extern crate lazy_static;
-
 #[macro_use]
 extern crate log;
+
+pub type Address = u64;
+pub type PhyAddress = u64;
 
 mod logfunctions;
 mod params;
 mod sim;
+mod syncunsafecell;
+
+pub mod mem;
 
 pub mod hook;

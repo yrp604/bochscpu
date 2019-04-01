@@ -8,6 +8,7 @@ edition = "2018"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
+ctor = "0.1"
 lazy_static = "1"
 log = "0.4"
 

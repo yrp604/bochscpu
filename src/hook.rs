@@ -1,8 +1,22 @@
 use std::ffi::c_void;
 use std::slice;
 
-pub type Address = u64;
-pub type PhyAddress = u64;
+use crate::{Address, PhyAddress};
+
+// If static mut gets the axe:
+//
+// use std::cell::UnsafeCell;
+//
+// static INIT_ENV_HOOKS: UnsafeCell<Vec<Box<InitEnvHook>>> = UnsafeCell::new(Vec::new());
+// ...
+// pub unsafe fn init_env<T: InitEnvHook + 'static>(h: T) {
+//     (*(INIT_ENV_HOOKS.get())).push(Box::new(h))
+// }
+//
+// #[no_mangle]
+// extern "C" fn bx_instr_init_env() {
+//     unsafe { INIT_ENV_HOOKS.get().iter_mut().for_each(|x| x()) }
+// }
 
 pub trait InitEnvHook = FnMut();
 pub trait ExitEnvHook = FnMut();
@@ -31,8 +45,6 @@ static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<CnearBranchTakenHook>> = Vec::new()
 static mut CNEAR_BRANCH_NOT_TAKEN_HOOKS: Vec<Box<CnearBranchNotTakenHook>> = Vec::new();
 static mut UCNEAR_BRANCH_HOOKS: Vec<Box<UcnearBranchHook>> = Vec::new();
 static mut FAR_BRANCH_HOOKS: Vec<Box<FarBranchHook>> = Vec::new();
-
-//
 
 pub trait OpcodeHook = FnMut(u32, *mut c_void, &[u8], bool, bool);
 pub trait InterruptHook = FnMut(u32, u32);
@@ -134,7 +146,6 @@ extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
 #[no_mangle]
 extern "C" fn bx_instr_hlt(cpu: u32) {
     unsafe { HLT_HOOKS.iter_mut().for_each(|x| x(cpu)) }
-
 }
 #[no_mangle]
 extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
@@ -160,7 +171,6 @@ pub unsafe fn far_branch<T: FarBranchHook + 'static>(h: T) {
 extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, new_eip: Address) {
     unsafe { CNEAR_BRANCH_TAKEN_HOOKS.iter_mut().for_each(|x| x(cpu, branch_eip, new_eip)) }
 }
-
 #[no_mangle]
 extern "C" fn bx_instr_cnear_branch_not_taken(cpu: u32, branch_eip: Address) {
     unsafe { CNEAR_BRANCH_NOT_TAKEN_HOOKS.iter_mut().for_each(|x| x(cpu, branch_eip)) }
@@ -170,10 +180,22 @@ extern "C" fn bx_instr_ucnear_branch(cpu: u32, what: u32, branch_eip: Address, n
     unsafe { UCNEAR_BRANCH_HOOKS.iter_mut().for_each(|x| x(cpu, what, branch_eip, new_eip)) }
 }
 #[no_mangle]
-extern "C" fn bx_instr_far_branch(cpu: u32, what: u32, prev_cs: u16, prev_eip: Address, new_cs: u16, new_eip: Address) {
-    unsafe { FAR_BRANCH_HOOKS.iter_mut().for_each(|x| x(cpu, what, (prev_cs, prev_eip), (new_cs, new_eip))) }
+extern "C" fn bx_instr_far_branch(
+    cpu: u32,
+    what: u32,
+    prev_cs: u16,
+    prev_eip: Address,
+    new_cs: u16,
+    new_eip: Address)
+{
+    unsafe {
+        FAR_BRANCH_HOOKS.iter_mut().for_each(
+            |x| x(cpu, what, (prev_cs, prev_eip), (new_cs, new_eip))
+        )
+    }
 }
 
+//
 //
 pub unsafe fn opcode<T: OpcodeHook + 'static>(h: T) {
     OPCODE_HOOKS.push(Box::new(h))

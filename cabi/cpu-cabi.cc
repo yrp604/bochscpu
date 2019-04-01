@@ -8,15 +8,26 @@ BOCHSAPI void cpu_loop(unsigned id) {
     bx_cpu_array[id]->cpu_loop();
 }
 
-BOCHSAPI void cpu_new(unsigned id) {
+BOCHSAPI BX_CPU_C* cpu_new(unsigned id) {
     BX_CPU_C *c  = new BX_CPU_C(id);
+
     c->initialize();
     c->sanity_checks();
-    bx_cpu_array[id] = new BX_CPU_C(id);
+
+    bx_cpu_array[id] = c;
+
+    BX_INSTR_INITIALIZE(id);
+
+    return c;
 }
 
 BOCHSAPI void cpu_delete(unsigned id) {
     delete bx_cpu_array[id];
+    bx_cpu_array[id] = NULL;
+}
+
+BOCHSAPI BX_CPU_C* cpu_from(unsigned id) {
+    return bx_cpu_array[id];
 }
 }
 
