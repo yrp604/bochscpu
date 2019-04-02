@@ -1,5 +1,9 @@
+#include <cstdint>
+#include <new>
+
 #include "bochs.h"
 #include "cpu/cpu.h"
+
 
 typedef BX_CPU_C *BX_CPU_C_PTR;
 
@@ -9,7 +13,12 @@ BOCHSAPI void cpu_loop(unsigned id) {
 }
 
 BOCHSAPI BX_CPU_C* cpu_new(unsigned id) {
-    BX_CPU_C *c  = new BX_CPU_C(id);
+    // bochs assumes that all things are init'd to zero, which breaks ASan so
+    // we use placement new to zero the mem
+    void *zero = new uint8_t[sizeof(BX_CPU_C)];
+    memset(zero, 0, sizeof(BX_CPU_C));
+
+    BX_CPU_C *c = new (zero) BX_CPU_C(id);
 
     c->initialize();
     c->sanity_checks();
@@ -22,7 +31,10 @@ BOCHSAPI BX_CPU_C* cpu_new(unsigned id) {
 }
 
 BOCHSAPI void cpu_delete(unsigned id) {
-    delete bx_cpu_array[id];
+    bx_cpu_array[id]->~BX_CPU_C();
+
+    delete[] bx_cpu_array[id];
+
     bx_cpu_array[id] = NULL;
 }
 

@@ -2,10 +2,12 @@ use std::path::Path;
 
 fn main() {
     // TODO figure out why the CFLAGS arent being inherited...
+    // .flag("-fsanitize=address").flag("-Wno-unused-parameter")
+    //
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/cpu-cabi.cc")
@@ -13,8 +15,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=cpu-cabi");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/mem-cabi.cc")
@@ -22,8 +24,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=mem-cabi");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/logfunctions-cabi.cc")
@@ -31,8 +33,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=logfunctions-cabi");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/siminterface-cabi.cc")
@@ -40,8 +42,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=siminterface-cabi");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("bochs/gui"))
         .include(Path::new("cabi"))
@@ -50,8 +52,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=paramtree");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/devices-cabi.cc")
@@ -59,8 +61,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=devices-cabi");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/dbg.cc")
@@ -68,8 +70,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=dbg");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/gui.cc")
@@ -77,8 +79,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=gui");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/system-cabi.cc")
@@ -86,8 +88,8 @@ fn main() {
     println!("cargo:rustc-link-lib=static=system-cabi");
 
     cc::Build::new()
-        .flag("-fsanitize=address").flag("-Wno-unused-parameter")
         .cpp(true)
+        .flag("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/apic.cc")

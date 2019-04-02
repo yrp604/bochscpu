@@ -3,10 +3,12 @@ use std::collections::BTreeMap;
 use crate::PhyAddress;
 use crate::syncunsafecell::SyncUnsafeCell;
 
+
 #[ctor]
 pub static MEM: SyncUnsafeCell<BTreeMap<PhyAddress, *mut u8>> = {
     SyncUnsafeCell::new(BTreeMap::new())
 };
+
 
 #[no_mangle]
 extern "C" fn mem_guest_to_host(a: PhyAddress, _rw: u32) -> *mut u8 {
