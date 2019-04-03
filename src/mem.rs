@@ -14,17 +14,20 @@ pub static MEM: SyncUnsafeCell<BTreeMap<PhyAddress, *mut u8>> = {
 extern "C" fn mem_guest_to_host(a: PhyAddress, _rw: u32) -> *mut u8 {
     trace!("translating guest phys {:x}...", a);
 
+    let page = a & !0xfff;
+    let off = a & 0xfff;
+
     unsafe {
         let m = &(*(MEM.0.get()));
 
-        *(m.get(&a).unwrap())
+        (*(m.get(&page).unwrap())).add(off as usize)
     }
 }
 
-pub unsafe fn add_page(a: PhyAddress, p: *mut u8) {
+pub unsafe fn page_add(a: PhyAddress, p: *mut u8) {
     (*(MEM.0.get())).insert(a, p);
 }
 
-pub unsafe fn del_page(a: PhyAddress) {
+pub unsafe fn page_del(a: PhyAddress) {
     (*(MEM.0.get())).remove(&a);
 }

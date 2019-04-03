@@ -1,1 +1,3 @@
 libinstrument.a:
+
+clean:
