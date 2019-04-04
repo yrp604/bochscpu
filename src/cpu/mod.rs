@@ -68,13 +68,13 @@ pub struct Cpu {
 }
 
 impl Cpu {
-    pub fn new(id: u32) -> Self {
+    pub unsafe fn new(id: u32) -> Self {
         unsafe { cpu_new(id) };
 
         Self { handle: id }
     }
 
-    pub fn from(id: u32, s: State) -> Self {
+    pub unsafe fn from(id: u32, s: State) -> Self {
         let c = Self::new(id);
         c.set_state(s);
 
@@ -85,33 +85,31 @@ impl Cpu {
         self.handle
     }
 
-    pub fn delete(&mut self) {
+    pub unsafe fn delete(&mut self) {
         unsafe { cpu_delete(self.handle)  };
     }
 
-    pub fn run(&self) {
-        unsafe {
-            set_run_state(self.handle, RunState::Go);
+    pub unsafe fn run(&self) {
+        set_run_state(self.handle, RunState::Go);
 
-            loop {
-                match run_state(self.handle) {
-                    RunState::Stop(_) => break,
-                    RunState::Go => cpu_loop(self.handle),
-                }
+        loop {
+            match run_state(self.handle) {
+                RunState::Stop(_) => break,
+                RunState::Go => cpu_loop(self.handle),
             }
         }
     }
 
-    pub fn pc(&self) -> u64 {
-        unsafe { cpu_get_pc(self.handle) }
+    pub unsafe fn pc(&self) -> u64 {
+        cpu_get_pc(self.handle)
     }
 
-    pub fn reg(&self, r: GpReg) -> u64 {
-        unsafe { cpu_get_reg64(self.handle, r as u32) }
+    pub unsafe fn reg(&self, r: GpReg) -> u64 {
+        cpu_get_reg64(self.handle, r as u32)
     }
 
-    pub fn set_reg(&self, r: GpReg, v: u64) {
-        unsafe { cpu_set_reg64(self.handle, r as u32, v) }
+    pub unsafe fn set_reg(&self, r: GpReg, v: u64) {
+        cpu_set_reg64(self.handle, r as u32, v)
     }
 
     /*
@@ -120,7 +118,7 @@ impl Cpu {
     }
     */
 
-    pub fn set_state(&self, s: State) {
+    pub unsafe fn set_state(&self, s: State) {
         unsafe { cpu_set_state(self.handle) }
     }
 }

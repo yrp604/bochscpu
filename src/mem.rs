@@ -9,6 +9,9 @@ pub static MEM: SyncUnsafeCell<BTreeMap<PhyAddress, *mut u8>> = {
     SyncUnsafeCell::new(BTreeMap::new())
 };
 
+pub unsafe fn mem() -> &'static mut BTreeMap<PhyAddress, *mut u8> {
+    &mut (*(MEM.0.get()))
+}
 
 #[no_mangle]
 extern "C" fn mem_guest_to_host(a: PhyAddress, _rw: u32) -> *mut u8 {
@@ -18,16 +21,14 @@ extern "C" fn mem_guest_to_host(a: PhyAddress, _rw: u32) -> *mut u8 {
     let off = a & 0xfff;
 
     unsafe {
-        let m = &(*(MEM.0.get()));
-
-        (*(m.get(&page).unwrap())).add(off as usize)
+        (*(mem().get(&page).unwrap())).add(off as usize)
     }
 }
 
 pub unsafe fn page_add(a: PhyAddress, p: *mut u8) {
-    (*(MEM.0.get())).insert(a, p);
+    mem().insert(a, p);
 }
 
 pub unsafe fn page_del(a: PhyAddress) {
-    (*(MEM.0.get())).remove(&a);
+    mem().remove(&a);
 }
