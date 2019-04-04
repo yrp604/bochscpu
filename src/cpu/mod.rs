@@ -45,7 +45,7 @@ impl Cpu {
     }
 
     pub fn from(id: u32, s: State) -> Self {
-        let c = new(id);
+        let c = Self::new(id);
         c.set_state(s);
 
         c
@@ -67,19 +67,21 @@ impl Cpu {
         unsafe { cpu_get_pc(self.handle) }
     }
 
-    pub fn reg(&self, r: Reg) -> u64 {
+    pub fn reg(&self, r: GpReg) -> u64 {
         unsafe { cpu_get_reg64(self.handle, r as u32) }
     }
 
-    pub fn set_reg(&self, r: Reg, v: u64) {
+    pub fn set_reg(&self, r: GpReg, v: u64) {
         unsafe { cpu_set_reg64(self.handle, r as u32, v) }
     }
 
+    /*
     pub fn state(&self) -> State {
 
     }
+    */
 
     pub fn set_state(&self, s: State) {
-        unsafe { cpu_set_state(self.id) }
+        unsafe { cpu_set_state(self.handle) }
     }
 }

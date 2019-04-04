@@ -65,6 +65,7 @@ BOCHSAPI void cpu_set_state(unsigned id) {
 #if BX_SUPPORT_AVX
      c->handleAvxModeChange();
 #endif
+#endif
 }
 }
 
