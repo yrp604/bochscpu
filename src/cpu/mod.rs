@@ -1,3 +1,5 @@
+use crate::syncunsafecell::SyncUnsafeCell;
+
 pub mod state;
 use state::State;
 
@@ -33,6 +35,34 @@ pub enum GpReg {
 
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum StopReason {
+    None,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum RunState {
+    Go,
+    Stop(StopReason),
+}
+
+// this needs to be global visible so callbacks can tell us to stop emulation
+// despite the intuitive race condition where different cpus modify their state
+// concurrently, bochs serializes cpu execution even with multiple cpus, so
+// this should be ok. I hope.
+#[ctor]
+pub static CPU_RUN_STATES: SyncUnsafeCell<Vec<RunState>> = {
+    SyncUnsafeCell::new(vec![RunState::Stop(StopReason::None); 255])
+};
+
+pub unsafe fn run_state(id: u32) -> RunState {
+    (*(CPU_RUN_STATES.0.get()))[id as usize]
+}
+
+pub unsafe fn set_run_state(id: u32, rs: RunState) {
+    (*(CPU_RUN_STATES.0.get()))[id as usize] = rs;
+}
+
 pub struct Cpu {
     handle: u32
 }
@@ -60,7 +90,16 @@ impl Cpu {
     }
 
     pub fn run(&self) {
-        unsafe { cpu_loop(self.handle) };
+        unsafe {
+            set_run_state(self.handle, RunState::Go);
+
+            loop {
+                match run_state(self.handle) {
+                    RunState::Stop(_) => break,
+                    RunState::Go => cpu_loop(self.handle),
+                }
+            }
+        }
     }
 
     pub fn pc(&self) -> u64 {
