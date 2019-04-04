@@ -5,3 +5,4 @@
 - [ ] Figure out how to init memory
 	* [ ] Maybe replace lazy static with memory init routines
 	* [ ] Maybe replace const expr vecs with init routines
+- [ ] Get bochscpu dump and add methods to load/store the cpu state

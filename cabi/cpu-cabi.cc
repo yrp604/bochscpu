@@ -38,8 +38,33 @@ BOCHSAPI void cpu_delete(unsigned id) {
     bx_cpu_array[id] = NULL;
 }
 
-BOCHSAPI BX_CPU_C* cpu_from(unsigned id) {
-    return bx_cpu_array[id];
+BOCHSAPI bx_address cpu_get_pc(unsigned id) {
+    return bx_cpu_array[id]->get_instruction_pointer();
+}
+
+BOCHSAPI Bit64u cpu_get_reg64(unsigned id, unsigned reg) {
+    return bx_cpu_array[id]->get_reg64(reg);
+}
+
+BOCHSAPI void cpu_set_reg64(unsigned id, unsigned reg, Bit64u val) {
+    bx_cpu_array[id]->set_reg64(reg, val);
+}
+
+BOCHSAPI void cpu_set_state(unsigned id) {
+    BX_CPU_C *c = bx_cpu_array[id];
+    c->TLB_flush();
+
+#if BX_CPU_LEVEL >= 4
+    c->handleAlignmentCheck(/* CR0.AC reloaded */);
+#endif
+
+    c->handleCpuModeChange();
+
+#if BX_CPU_LEVEL >= 6
+     c->handleSseModeChange();
+#if BX_SUPPORT_AVX
+     c->handleAvxModeChange();
+#endif
 }
 }
 

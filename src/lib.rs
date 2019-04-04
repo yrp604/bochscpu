@@ -17,5 +17,5 @@ mod sim;
 mod syncunsafecell;
 
 pub mod mem;
-
+pub mod cpu;
 pub mod hook;
