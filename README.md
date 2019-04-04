@@ -36,9 +36,9 @@ fn main() {
                 error_code
             );
         });
-    }
 
-    let c = Cpu::new(0);
-    c.run();
+        let c = Cpu::new(0);
+        c.run();
+    }
 }
 ```

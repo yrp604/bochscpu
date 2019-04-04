@@ -8,3 +8,5 @@
 - [ ] Figure out how to exit `cpu_loop`
 - [ ] Get bochscpu dump and add methods to load/store the cpu state
 - [ ] Write windbg-js to dump register state
+- [ ] Figure out patching bochs in a not-shit way
+	* [ ] Fix rdrand via patching method with rip ^ branch ctr

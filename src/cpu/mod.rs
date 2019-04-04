@@ -15,6 +15,7 @@ extern "C" {
     fn cpu_set_state(id: u32);
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum GpReg {
     Rax = 0,
     Rcx = 1,
@@ -32,7 +33,6 @@ pub enum GpReg {
     R13 = 13,
     R14 = 14,
     R15 = 15,
-
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -69,7 +69,7 @@ pub struct Cpu {
 
 impl Cpu {
     pub unsafe fn new(id: u32) -> Self {
-        unsafe { cpu_new(id) };
+        cpu_new(id);
 
         Self { handle: id }
     }
@@ -86,7 +86,7 @@ impl Cpu {
     }
 
     pub unsafe fn delete(&mut self) {
-        unsafe { cpu_delete(self.handle)  };
+        cpu_delete(self.handle);
     }
 
     pub unsafe fn run(&self) {
@@ -119,6 +119,6 @@ impl Cpu {
     */
 
     pub unsafe fn set_state(&self, s: State) {
-        unsafe { cpu_set_state(self.handle) }
+        cpu_set_state(self.handle)
     }
 }

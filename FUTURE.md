@@ -1,1 +1,0 @@
-- Replace rdrand with seed(branchctr ^ rip); then call rdrand()
