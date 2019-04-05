@@ -74,8 +74,19 @@ impl Cpu {
         Self { handle: id }
     }
 
-    pub unsafe fn from(id: u32, s: State) -> Self {
+    pub unsafe fn new_with_state(id: u32, s: State) -> Self {
         let c = Self::new(id);
+        c.set_state(s);
+
+        c
+    }
+
+    pub fn from(id: u32) -> Self {
+        Self { handle: id }
+    }
+
+    pub unsafe fn from_with_state(id: u32, s: State) -> Self {
+        let c = Self::from(id);
         c.set_state(s);
 
         c
@@ -120,5 +131,13 @@ impl Cpu {
 
     pub unsafe fn set_state(&self, s: State) {
         cpu_set_state(self.handle)
+    }
+
+    pub unsafe fn run_state(&self) -> RunState {
+        run_state(self.handle)
+    }
+
+    pub unsafe fn set_run_state(&self, rs: RunState) {
+        set_run_state(self.handle, rs)
     }
 }
