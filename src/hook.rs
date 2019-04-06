@@ -19,6 +19,7 @@ use crate::{Address, PhyAddress};
 //     unsafe { INIT_ENV_HOOKS.get().iter_mut().for_each(|x| x()) }
 // }
 
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Branch {
     Jmp = 10,

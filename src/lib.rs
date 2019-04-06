@@ -8,6 +8,8 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 
+pub static NUM_CPUS: usize = 255;
+
 pub type Address = u64;
 pub type PhyAddress = u64;
 
