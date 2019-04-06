@@ -11,6 +11,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 ctor = "0.1"
 lazy_static = "1"
 log = "0.4"
+unreachable = "1"
 
 [build-dependencies]
 cc = "1"

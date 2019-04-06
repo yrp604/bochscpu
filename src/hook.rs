@@ -1,5 +1,6 @@
 use std::ffi::c_void;
 use std::slice;
+use unreachable::unreachable;
 
 use crate::{Address, PhyAddress};
 
@@ -17,6 +18,126 @@ use crate::{Address, PhyAddress};
 // extern "C" fn bx_instr_init_env() {
 //     unsafe { INIT_ENV_HOOKS.get().iter_mut().for_each(|x| x()) }
 // }
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum Branch {
+    Jmp = 10,
+    JmpIndirect = 11,
+    Call = 12,
+    CallIndirect = 13,
+    Ret = 14,
+    Iret = 15,
+    Int = 16,
+    Syscall = 17,
+    Sysret = 18,
+    Sysenter = 19,
+    Sysexit = 20,
+}
+
+impl From<u32> for Branch {
+    fn from(i: u32) -> Self {
+        match i {
+            10 => Branch::Jmp,
+            11 => Branch::JmpIndirect,
+            12 => Branch::Call,
+            13 => Branch::CallIndirect,
+            14 => Branch::Ret,
+            15 => Branch::Iret,
+            16 => Branch::Int,
+            17 => Branch::Syscall,
+            18 => Branch::Sysret,
+            19 => Branch::Sysenter,
+            20 => Branch::Sysexit,
+            _ => unsafe { unreachable() },
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum TlbCntrl {
+    MovCr0 = 10,
+    MovCr3 = 11,
+    MovCr4 = 12,
+    TaskSwitch = 13,
+    ContextSwitch = 14,
+    InvLpg = 15,
+    InvEpt = 16,
+    InvVpid = 17,
+    InvPcid = 18,
+}
+
+impl From<u32> for TlbCntrl {
+    fn from(i: u32) -> Self {
+        match i {
+            10 => TlbCntrl::MovCr0,
+            11 => TlbCntrl::MovCr3,
+            12 => TlbCntrl::MovCr4,
+            13 => TlbCntrl::TaskSwitch,
+            14 => TlbCntrl::ContextSwitch,
+            15 => TlbCntrl::InvLpg,
+            16 => TlbCntrl::InvEpt,
+            17 => TlbCntrl::InvVpid,
+            18 => TlbCntrl::InvPcid,
+            _ => unsafe { unreachable() }
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum CacheCntrl {
+    Invd = 10,
+    Wbind = 11,
+}
+
+impl From<u32> for CacheCntrl {
+    fn from(i: u32) -> Self {
+        match i {
+            10 => CacheCntrl::Invd,
+            11 => CacheCntrl::Wbind,
+            _ => unsafe { unreachable() },
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum PrefetchHint {
+    Nta = 0,
+    T0 = 1,
+    T1 = 2,
+    T2 = 3,
+}
+
+impl From<u32> for PrefetchHint {
+    fn from(i: u32) -> Self {
+        match i {
+            0 => PrefetchHint::Nta,
+            1 => PrefetchHint::T0,
+            2 => PrefetchHint::T1,
+            3 => PrefetchHint::T2,
+            _ => unsafe { unreachable() },
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub enum MemAccess {
+    Read = 0,
+    Write = 1,
+    Execute = 2,
+    RW = 3,
+}
+
+impl From<u32> for MemAccess {
+    fn from(i: u32) -> Self {
+        match i {
+            0 => MemAccess::Read,
+            1 => MemAccess::Write,
+            2 => MemAccess::Execute,
+            3 => MemAccess::RW,
+            _ => unsafe { unreachable() },
+        }
+    }
+}
 
 pub trait InitEnvHook = FnMut();
 pub trait ExitEnvHook = FnMut();
@@ -39,7 +160,7 @@ static mut MWAIT_HOOKS: Vec<Box<MwaitHook>> = Vec::new();
 pub trait CnearBranchTakenHook = FnMut(u32, Address, Address);
 pub trait CnearBranchNotTakenHook = FnMut(u32, Address);
 pub trait UcnearBranchHook = FnMut(u32, u32, Address, Address);
-pub trait FarBranchHook = FnMut(u32, u32, (u16, Address), (u16, Address));
+pub trait FarBranchHook = FnMut(u32, Branch, (u16, Address), (u16, Address));
 
 static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<CnearBranchTakenHook>> = Vec::new();
 static mut CNEAR_BRANCH_NOT_TAKEN_HOOKS: Vec<Box<CnearBranchNotTakenHook>> = Vec::new();
@@ -56,9 +177,9 @@ static mut INTERRUPT_HOOKS: Vec<Box<InterruptHook>> = Vec::new();
 static mut EXCEPTION_HOOKS: Vec<Box<ExceptionHook>> = Vec::new();
 static mut HW_INTERRUPT_HOOKS: Vec<Box<HwInterruptHook>> = Vec::new();
 
-pub trait TlbCntrlHook = FnMut(u32, u32, PhyAddress);
-pub trait CacheCntrlHook = FnMut(u32, u32);
-pub trait PrefetchHintHook = FnMut(u32, u32, u32, Address);
+pub trait TlbCntrlHook = FnMut(u32, TlbCntrl, Option<PhyAddress>);
+pub trait CacheCntrlHook = FnMut(u32, CacheCntrl);
+pub trait PrefetchHintHook = FnMut(u32, PrefetchHint, u32, Address);
 pub trait ClflushHook = FnMut(u32, Address, PhyAddress);
 
 static mut TLB_CNTRL_HOOKS: Vec<Box<TlbCntrlHook>> = Vec::new();
@@ -82,8 +203,8 @@ static mut INP_HOOKS: Vec<Box<InpHook>> = Vec::new();
 static mut INP2_HOOKS: Vec<Box<Inp2Hook>> = Vec::new();
 static mut OUTP_HOOKS: Vec<Box<OutpHook>> = Vec::new();
 
-pub trait LinAccessHook = FnMut(u32, Address, Address, usize, u32, u32);
-pub trait PhyAccessHook = FnMut(u32, Address, usize, u32, u32);
+pub trait LinAccessHook = FnMut(u32, Address, Address, usize, u32, MemAccess);
+pub trait PhyAccessHook = FnMut(u32, Address, usize, u32, MemAccess);
 
 static mut LIN_ACCESS_HOOKS: Vec<Box<LinAccessHook>> = Vec::new();
 static mut PHY_ACCESS_HOOKS: Vec<Box<PhyAccessHook>> = Vec::new();
@@ -190,7 +311,7 @@ extern "C" fn bx_instr_far_branch(
 {
     unsafe {
         FAR_BRANCH_HOOKS.iter_mut().for_each(
-            |x| x(cpu, what, (prev_cs, prev_eip), (new_cs, new_eip))
+            |x| x(cpu, what.into(), (prev_cs, prev_eip), (new_cs, new_eip))
         )
     }
 }
@@ -253,15 +374,24 @@ pub unsafe fn clflush<T: ClflushHook + 'static>(h: T) {
 }
 #[no_mangle]
 extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
-    unsafe { TLB_CNTRL_HOOKS.iter_mut().for_each(|x| x(cpu, what, new_cr3)) }
+    let ty = what.into();
+    let maybe_cr3 = match ty {
+        TlbCntrl::MovCr0 => Some(new_cr3),
+        TlbCntrl::MovCr3 => Some(new_cr3),
+        TlbCntrl::MovCr4 => Some(new_cr3),
+        TlbCntrl::TaskSwitch => Some(new_cr3),
+        _ => None,
+    };
+
+    unsafe { TLB_CNTRL_HOOKS.iter_mut().for_each(|x| x(cpu, ty, maybe_cr3)) }
 }
 #[no_mangle]
 extern "C" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
-    unsafe { CACHE_CNTRL_HOOKS.iter_mut().for_each(|x| x(cpu, what)) }
+    unsafe { CACHE_CNTRL_HOOKS.iter_mut().for_each(|x| x(cpu, what.into())) }
 }
 #[no_mangle]
 extern "C" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offset: Address) {
-    unsafe { PREFETCH_HINT_HOOKS.iter_mut().for_each(|x| x(cpu, what, seg, offset)) }
+    unsafe { PREFETCH_HINT_HOOKS.iter_mut().for_each(|x| x(cpu, what.into(), seg, offset)) }
 }
 #[no_mangle]
 extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
@@ -327,11 +457,11 @@ pub unsafe fn phy_access<T: PhyAccessHook + 'static>(h: T) {
 }
 #[no_mangle]
 extern "C" fn bx_instr_lin_access(cpu: u32, lin: Address, phy: Address, len: u32, memtype: u32, rw: u32) {
-    unsafe { LIN_ACCESS_HOOKS.iter_mut().for_each(|x| x(cpu, lin, phy, len as usize, memtype, rw)) }
+    unsafe { LIN_ACCESS_HOOKS.iter_mut().for_each(|x| x(cpu, lin, phy, len as usize, memtype, rw.into())) }
 }
 #[no_mangle]
 extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memtype: u32, rw: u32) {
-    unsafe { PHY_ACCESS_HOOKS.iter_mut().for_each(|x| x(cpu, phy, len as usize, memtype, rw)) }
+    unsafe { PHY_ACCESS_HOOKS.iter_mut().for_each(|x| x(cpu, phy, len as usize, memtype, rw.into())) }
 }
 
 //

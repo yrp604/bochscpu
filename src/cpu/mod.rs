@@ -38,6 +38,7 @@ pub enum GpReg {
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum StopReason {
     None,
+    Timeout,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -100,7 +101,7 @@ impl Cpu {
         cpu_delete(self.handle);
     }
 
-    pub unsafe fn run(&self) {
+    pub unsafe fn run(&self) -> RunState {
         set_run_state(self.handle, RunState::Go);
 
         loop {
@@ -109,6 +110,8 @@ impl Cpu {
                 RunState::Go => cpu_loop(self.handle),
             }
         }
+
+        run_state(self.handle)
     }
 
     pub unsafe fn pc(&self) -> u64 {
