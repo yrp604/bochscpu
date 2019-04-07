@@ -1,6 +1,8 @@
 #include "bochs.h"
 
-bx_pc_system_c::bx_pc_system_c() {}
+bx_pc_system_c::bx_pc_system_c() {
+    a20_mask =  BX_CONST64(0xffffffffffffffff);
+}
 
 int bx_pc_system_c::register_timer(void *this_ptr, bx_timer_handler_t,
     Bit32u useconds, bx_bool continuous, bx_bool active, const char *id)

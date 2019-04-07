@@ -294,9 +294,10 @@ impl Cpu {
     //  r8=0000000000010000  r9=000000b69e6ef704 r10=00000202e01c9a40
     // r11=00000202e01e42a0 r12=0000000000000000 r13=0000000000000000
     // r14=0000000000000000 r15=0000000000000000
-    pub unsafe fn dump_gprs(&self) {
+    pub unsafe fn print_gprs(&self) {
         println!("rax={:016x} rbx={:016x} rcx={:016x}", self.rax(), self.rbx(), self.rcx());
         println!("rdx={:016x} rsi={:016x} rdi={:016x}", self.rdx(), self.rsi(), self.rdi());
+        println!("rip={:016x} rsp={:016x} rbp={:016x}", self.rip(), self.rsp(), self.rbp());
         println!(" r8={:016x}  r9={:016x} r10={:016x}", self.r8(), self.r9(), self.r10());
         println!("r11={:016x} r12={:016x} r13={:016x}", self.r11(), self.r12(), self.r13());
         println!("r14={:016x} r15={:016x}", self.r14(), self.r15());
@@ -422,6 +423,8 @@ impl Cpu {
     }
 
     pub unsafe fn set_state(&self, s: &State) {
+        self.set_rip(s.rip);
+
         self.set_rax(s.rax);
         self.set_rcx(s.rcx);
         self.set_rdx(s.rdx);

@@ -40,6 +40,7 @@ BOCHSAPI void cpu_delete(unsigned id) {
 
 BOCHSAPI void cpu_set_state(unsigned id) {
     BX_CPU_C *c = bx_cpu_array[id];
+
     c->TLB_flush();
 
 #if BX_CPU_LEVEL >= 4
@@ -49,10 +50,7 @@ BOCHSAPI void cpu_set_state(unsigned id) {
     c->handleCpuModeChange();
 
 #if BX_CPU_LEVEL >= 6
-     c->handleSseModeChange();
-#if BX_SUPPORT_AVX
-     c->handleAvxModeChange();
-#endif
+    c->handleSseModeChange();
 #endif
 }
 

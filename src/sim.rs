@@ -67,6 +67,7 @@ lazy_static! {
         m.insert("cpu.n_threads", ParamNum::new(cstr!("n_threads"), 1, 4, 1));
         m.insert("cpu.n_cores", ParamNum::new(cstr!("n_cores"), 1, 8, 1));
         m.insert("cpu.n_processors", ParamNum::new(cstr!("n_processors"), 1, NUM_CPUS as u64, 1));
+        m.insert("cpu.quantum", ParamNum::new(cstr!("quantum"), 1, 32, 16));
 
         m.insert("cpuid.level", ParamNum::new(cstr!("level"), 5, 6, 6));
         m.insert("cpuid.vmx", ParamNum::new(cstr!("vmx"), 0, 2, 2));
@@ -104,6 +105,7 @@ lazy_static! {
 
         m.insert("cpu.cpuid_limit_winnt", ParamBool::new(cstr!("cpuid_limit_winnt"), false));
         m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_bad_msrs"), false));
+        m.insert("cpu.reset_on_triple_fault", ParamBool::new(cstr!("ignore_bad_msrs"), false));
 
         m
     };

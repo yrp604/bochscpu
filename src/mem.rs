@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::slice;
 
 use crate::PhyAddress;
 use crate::syncunsafecell::SyncUnsafeCell;
@@ -25,10 +26,36 @@ extern "C" fn mem_guest_to_host(a: PhyAddress, _rw: u32) -> *mut u8 {
     }
 }
 
-pub unsafe fn page_add(a: PhyAddress, p: *mut u8) {
-    mem().insert(a, p);
+#[no_mangle]
+extern "C" fn mem_read_phy(a: PhyAddress, sz: u32, dst: *mut u8) {
+    trace!("mem read {} bytes from phys {:x}...", sz, a);
+
+    let sz = sz as usize;
+    let page = a & !0xfff;
+    let off = a & 0xfff;
+
+    unsafe {
+        let src_ptr = (*(mem().get(&page).unwrap())).add(off as usize);
+        let src = slice::from_raw_parts(src_ptr, sz);
+        let dst = slice::from_raw_parts_mut(dst, sz);
+
+        dst.copy_from_slice(src);
+    }
 }
 
-pub unsafe fn page_del(a: PhyAddress) {
-    mem().remove(&a);
+#[no_mangle]
+extern "C" fn mem_write_phy(a: PhyAddress, sz: u32, src: *const u8) {
+    trace!("mem write {} bytes to phys {:x}...", sz, a);
+
+    let sz = sz as usize;
+    let page = a & !0xfff;
+    let off = a & 0xfff;
+
+    unsafe {
+        let dst_ptr = (*(mem().get(&page).unwrap())).add(off as usize);
+        let dst = slice::from_raw_parts_mut(dst_ptr, sz);
+        let src = slice::from_raw_parts(src, sz);
+
+        dst.copy_from_slice(src);
+    }
 }

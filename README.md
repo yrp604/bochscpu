@@ -42,3 +42,9 @@ fn main() {
     }
 }
 ```
+
+This guy allocates a lot of pages. You'll likely need to tweak sysctls:
+```
+# sysctl vm.max_map_count # see the current limit
+# sysctl -w sysctl vm.max_map_count=<something above the number of phys pages in your dump>
+```
