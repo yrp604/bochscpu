@@ -1,16 +1,23 @@
-use crate::{Address, NUM_CPUS};
+use crate::{Address, PhyAddress, NUM_CPUS};
 use crate::syncunsafecell::SyncUnsafeCell;
 
 pub mod state;
 use state::State;
+
+// look at lock_api crate to see if I can figure out how to do cpu locking
+// so I dont need to make everything unsafe
 
 extern "C" {
     fn cpu_new(id: u32);
     fn cpu_delete(id: u32);
 
     fn cpu_loop(id: u32);
-    fn cpu_get_pc(id: u32) -> u64;
+
     fn cpu_set_state(id: u32);
+
+    fn cpu_get_pc(id: u32) -> u64;
+    fn cpu_set_pc(id: u32, val: u64);
+    fn cpu_set_sp(id: u32, val: u64);
 
     fn cpu_get_reg64(id: u32, reg: u32) -> u64;
     fn cpu_set_reg64(id: u32, reg: u32, val: u64);
@@ -33,6 +40,8 @@ extern "C" {
     fn cpu_set_cr3(id: u32, val: Address);
     fn cpu_get_cr4(id: u32) -> u32;
     fn cpu_set_cr4(id: u32, val: u32);
+    fn cpu_get_cr8(id: u32) -> u32;
+    fn cpu_set_cr8(id: u32, val: u32);
     fn cpu_get_efer(id: u32) -> u32;
     fn cpu_set_efer(id: u32, val: u32);
     fn cpu_get_xcr0(id: u32) -> u32;
@@ -54,9 +63,31 @@ extern "C" {
     fn cpu_set_cstar(id: u32, val: u64);
     fn cpu_get_fmask(id: u32) -> u32;
     fn cpu_set_fmask(id: u32, val: u32);
+    fn cpu_get_tsc(id: u32) -> u64;
+    fn cpu_set_tsc(id: u32, val: u64);
+    fn cpu_get_tsc_aux(id: u32) -> u32;
+    fn cpu_set_tsc_aux(id: u32, val: u32);
+    fn cpu_get_apicbase(id: u32) -> PhyAddress;
+    fn cpu_set_apicbase(id: u32, val: PhyAddress);
+    fn cpu_get_pat(id: u32) -> u64;
+    fn cpu_set_pat(id: u32, val: u64);
+
+    fn cpu_get_zmm(id: u32, reg: u32, val: *mut u64) -> Zmm;
+    fn cpu_set_zmm(id: u32, reg: u32, val: *const u64);
+
+    fn cpu_get_fp_cw(id: u32) -> u16;
+    fn cpu_set_fp_cw(id: u32, val: u16);
+    fn cpu_get_fp_sw(id: u32) -> u16;
+    fn cpu_set_fp_sw(id: u32, val: u16);
+    fn cpu_get_fp_tw(id: u32) -> u16;
+    fn cpu_set_fp_tw(id: u32, val: u16);
+    fn cpu_get_fp_op(id: u32) -> u16;
+    fn cpu_set_fp_op(id: u32, val: u16);
+    fn cpu_get_fp_st(id: u32, reg: u32) -> u64;
+    fn cpu_set_fp_st(id: u32, reg: u32, val: u64);
 }
 
-enum GpReg {
+enum GpRegs {
     Rax = 0,
     Rcx = 1,
     Rdx = 2,
@@ -73,13 +104,20 @@ enum GpReg {
     R13 = 13,
     R14 = 14,
     R15 = 15,
+    // unused Rip = 16,
 }
 
-enum DrReg {
+enum DRegs {
     Dr0 = 0,
     Dr1 = 1,
     Dr2 = 2,
     Dr3 = 3,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub struct Zmm {
+    q: [u64; 8]
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -135,6 +173,7 @@ impl Cpu {
 
     pub unsafe fn from_with_state(id: u32, s: State) -> Self {
         let c = Self::from(id);
+
         c.set_state(s);
 
         c
@@ -169,13 +208,187 @@ impl Cpu {
         set_run_state(self.handle, rs)
     }
 
-    /*
-    pub fn state(&self) -> State {
-
+    // rax=0000000000000000 rbx=00000202e01c5080 rcx=00000202e01b5c88
+    // rdx=000000b69e6ef750 rsi=0000000000000000 rdi=000000b69e6ff750
+    // rip=00007ffa91c37870 rsp=000000b69e6ef6b8 rbp=0000000000000000
+    //  r8=0000000000010000  r9=000000b69e6ef704 r10=00000202e01c9a40
+    // r11=00000202e01e42a0 r12=0000000000000000 r13=0000000000000000
+    // r14=0000000000000000 r15=0000000000000000
+    pub unsafe fn dump_gprs(&self) {
+        println!("rax={:016x} rbx={:016x} rcx={:016x}", self.rax(), self.rbx(), self.rcx());
+        println!("rdx={:016x} rsi={:016x} rdi={:016x}", self.rdx(), self.rsi(), self.rdi());
+        println!(" r8={:016x}  r9={:016x} r10={:016x}", self.r8(), self.r9(), self.r10());
+        println!("r11={:016x} r12={:016x} r13={:016x}", self.r11(), self.r12(), self.r13());
+        println!("r14={:016x} r15={:016x}", self.r14(), self.r15());
     }
-    */
+
+
+    pub unsafe fn state(&self) -> State {
+        State {
+            rip: self.rip(),
+
+            rax: self.rax(),
+            rcx: self.rcx(),
+            rdx: self.rdx(),
+            rbx: self.rbx(),
+            rsp: self.rsp(),
+            rbp: self.rbp(),
+            rsi: self.rsi(),
+            rdi: self.rdi(),
+            r8: self.r8(),
+            r9: self.r9(),
+            r10: self.r10(),
+            r11: self.r11(),
+            r12: self.r12(),
+            r13: self.r13(),
+            r14: self.r14(),
+            r15: self.r15(),
+            rflags: self.rflags(),
+
+            dr0: self.dr0(),
+            dr1: self.dr1(),
+            dr2: self.dr2(),
+            dr3: self.dr3(),
+            dr6: self.dr6(),
+            dr7: self.dr7(),
+
+            cr0: self.cr0(),
+            cr2: self.cr2(),
+            cr3: self.cr3(),
+            cr4: self.cr4(),
+            cr8: self.cr8(),
+            xcr0: self.xcr0(),
+
+            kernel_gs_base: self.kernel_gs_base(),
+            sysenter_cs: self.sysenter_cs(),
+            sysenter_eip: self.sysenter_eip(),
+            sysenter_esp: self.sysenter_esp(),
+            star: self.star(),
+            lstar: self.lstar(),
+            cstar: self.cstar(),
+            efer: self.efer(),
+            sfmask: self.sfmask(),
+            tsc: self.tsc(),
+            apic_base: self.apic_base(),
+            pat: self.pat(),
+            tsc_aux: self.tsc_aux(),
+
+            zmm: [
+                self.zmm(0),
+                self.zmm(1),
+                self.zmm(2),
+                self.zmm(3),
+                self.zmm(4),
+                self.zmm(5),
+                self.zmm(6),
+                self.zmm(7),
+                self.zmm(8),
+                self.zmm(9),
+                self.zmm(10),
+                self.zmm(11),
+                self.zmm(12),
+                self.zmm(13),
+                self.zmm(14),
+                self.zmm(15),
+                self.zmm(16),
+                self.zmm(17),
+                self.zmm(18),
+                self.zmm(19),
+                self.zmm(20),
+                self.zmm(21),
+                self.zmm(22),
+                self.zmm(23),
+                self.zmm(24),
+                self.zmm(25),
+                self.zmm(26),
+                self.zmm(27),
+                self.zmm(28),
+                self.zmm(29),
+                self.zmm(30),
+                self.zmm(31),
+            ],
+
+            fpcw: self.fp_cw(),
+            fpsw: self.fp_sw(),
+            fptw: self.fp_tw(),
+            fpop: self.fp_op(),
+            fpst: [
+                self.fp_st(0),
+                self.fp_st(1),
+                self.fp_st(2),
+                self.fp_st(3),
+                self.fp_st(4),
+                self.fp_st(5),
+                self.fp_st(6),
+                self.fp_st(7),
+            ],
+
+            // XXX
+            mxcsr: 0,
+            mxcsr_mask: 0,
+        }
+    }
 
     pub unsafe fn set_state(&self, s: State) {
+        self.set_rax(s.rax);
+        self.set_rcx(s.rcx);
+        self.set_rdx(s.rdx);
+        self.set_rbx(s.rbx);
+        self.set_rsp(s.rsp);
+        self.set_rbp(s.rbp);
+        self.set_rsi(s.rsi);
+        self.set_rdi(s.rdi);
+        self.set_r8(s.r8);
+        self.set_r9(s.r9);
+        self.set_r10(s.r10);
+        self.set_r11(s.r11);
+        self.set_r12(s.r12);
+        self.set_r13(s.r13);
+        self.set_r14(s.r14);
+        self.set_r15(s.r15);
+        self.set_rflags(s.rflags);
+
+        self.set_dr0(s.dr0);
+        self.set_dr1(s.dr1);
+        self.set_dr2(s.dr2);
+        self.set_dr3(s.dr3);
+        self.set_dr6(s.dr6);
+        self.set_dr7(s.dr7);
+
+        self.set_cr0(s.cr0);
+        self.set_cr2(s.cr2);
+        self.set_cr3(s.cr3);
+        self.set_cr4(s.cr4);
+        self.set_cr8(s.cr8);
+        self.set_xcr0(s.xcr0);
+
+        self.set_kernel_gs_base(s.kernel_gs_base);
+        self.set_sysenter_cs(s.sysenter_cs);
+        self.set_sysenter_esp(s.sysenter_esp);
+        self.set_sysenter_eip(s.sysenter_eip);
+        self.set_efer(s.efer);
+        self.set_star(s.star);
+        self.set_lstar(s.lstar);
+        self.set_cstar(s.cstar);
+        self.set_sfmask(s.sfmask);
+        self.set_tsc(s.tsc);
+        self.set_apic_base(s.apic_base);
+        self.set_pat(s.pat);
+        self.set_tsc_aux(s.tsc_aux);
+
+        for (ii, z) in (&s.zmm).iter().enumerate() {
+            self.set_zmm(ii, *z);
+        }
+
+        self.set_fp_cw(s.fpcw);
+        self.set_fp_sw(s.fpsw);
+        self.set_fp_tw(s.fptw);
+        self.set_fp_op(s.fpop);
+
+        for (ii, f) in (&s.fpst).iter().enumerate() {
+            self.set_fp_st(ii, *f);
+        }
+
         cpu_set_state(self.handle)
     }
 
@@ -191,143 +404,143 @@ impl Cpu {
     }
 
     pub unsafe fn set_rip(&self, v: u64) {
-        unimplemented!()
+        cpu_set_pc(self.handle, v);
     }
 
     pub unsafe fn rax(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rax as _)
+        cpu_get_reg64(self.handle, GpRegs::Rax as _)
     }
 
     pub unsafe fn set_rax(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rax as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rax as _, v)
     }
 
     pub unsafe fn rcx(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rcx as _)
+        cpu_get_reg64(self.handle, GpRegs::Rcx as _)
     }
 
     pub unsafe fn set_rcx(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rcx as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rcx as _, v)
     }
 
     pub unsafe fn rdx(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rdx as _)
+        cpu_get_reg64(self.handle, GpRegs::Rdx as _)
     }
 
     pub unsafe fn set_rdx(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rdx as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rdx as _, v)
     }
 
     pub unsafe fn rbx(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rbx as _)
+        cpu_get_reg64(self.handle, GpRegs::Rbx as _)
     }
 
     pub unsafe fn set_rbx(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rbx as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rbx as _, v)
     }
 
     pub unsafe fn rsp(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rsp as _)
+        cpu_get_reg64(self.handle, GpRegs::Rsp as _)
     }
 
     pub unsafe fn set_rsp(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rsp as _, v)
+        cpu_set_sp(self.handle, v)
     }
 
     pub unsafe fn rbp(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rbp as _)
+        cpu_get_reg64(self.handle, GpRegs::Rbp as _)
     }
 
     pub unsafe fn set_rbp(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rbp as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rbp as _, v)
     }
 
     pub unsafe fn rsi(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rsi as _)
+        cpu_get_reg64(self.handle, GpRegs::Rsi as _)
     }
 
     pub unsafe fn set_rsi(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rsi as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rsi as _, v)
     }
 
     pub unsafe fn rdi(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::Rdi as _)
+        cpu_get_reg64(self.handle, GpRegs::Rdi as _)
     }
 
     pub unsafe fn set_rdi(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::Rdi as _, v)
+        cpu_set_reg64(self.handle, GpRegs::Rdi as _, v)
     }
 
     pub unsafe fn r8(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R8 as _)
+        cpu_get_reg64(self.handle, GpRegs::R8 as _)
     }
 
     pub unsafe fn set_r8(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R8 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R8 as _, v)
     }
 
     pub unsafe fn r9(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R9 as _)
+        cpu_get_reg64(self.handle, GpRegs::R9 as _)
     }
 
     pub unsafe fn set_r9(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R9 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R9 as _, v)
     }
 
     pub unsafe fn r10(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R10 as _)
+        cpu_get_reg64(self.handle, GpRegs::R10 as _)
     }
 
     pub unsafe fn set_r10(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R10 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R10 as _, v)
     }
 
     pub unsafe fn r11(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R11 as _)
+        cpu_get_reg64(self.handle, GpRegs::R11 as _)
     }
 
     pub unsafe fn set_r11(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R11 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R11 as _, v)
     }
 
     pub unsafe fn r12(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R12 as _)
+        cpu_get_reg64(self.handle, GpRegs::R12 as _)
     }
 
     pub unsafe fn set_r12(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R12 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R12 as _, v)
     }
 
     pub unsafe fn r13(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R13 as _)
+        cpu_get_reg64(self.handle, GpRegs::R13 as _)
     }
 
     pub unsafe fn set_r13(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R13 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R13 as _, v)
     }
 
     pub unsafe fn r14(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R14 as _)
+        cpu_get_reg64(self.handle, GpRegs::R14 as _)
     }
 
     pub unsafe fn set_r14(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R14 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R14 as _, v)
     }
 
     pub unsafe fn r15(&self) -> u64 {
-        cpu_get_reg64(self.handle, GpReg::R15 as _)
+        cpu_get_reg64(self.handle, GpRegs::R15 as _)
     }
 
     pub unsafe fn set_r15(&self, v: u64) {
-        cpu_set_reg64(self.handle, GpReg::R15 as _, v)
+        cpu_set_reg64(self.handle, GpRegs::R15 as _, v)
     }
 
-    pub unsafe fn rflags(&self) -> u32 {
-        cpu_get_eflags(self.handle)
+    pub unsafe fn rflags(&self) -> u64 {
+        cpu_get_eflags(self.handle) as _
     }
 
-    pub unsafe fn set_rflags(&self, v: u32) {
-        cpu_set_eflags(self.handle, v)
+    pub unsafe fn set_rflags(&self, v: u64) {
+        cpu_set_eflags(self.handle, v as _)
     }
 
     // segment registers
@@ -336,35 +549,35 @@ impl Cpu {
     // debug registers
 
     pub unsafe fn dr0(&self) -> Address {
-        cpu_get_dr(self.handle, DrReg::Dr0 as _)
+        cpu_get_dr(self.handle, DRegs::Dr0 as _)
     }
 
     pub unsafe fn set_dr0(&self, v: Address) {
-        cpu_set_dr(self.handle, DrReg::Dr0 as _, v)
+        cpu_set_dr(self.handle, DRegs::Dr0 as _, v)
     }
 
     pub unsafe fn dr1(&self) -> Address {
-        cpu_get_dr(self.handle, DrReg::Dr1 as _)
+        cpu_get_dr(self.handle, DRegs::Dr1 as _)
     }
 
     pub unsafe fn set_dr1(&self, v: Address) {
-        cpu_set_dr(self.handle, DrReg::Dr1 as _, v)
+        cpu_set_dr(self.handle, DRegs::Dr1 as _, v)
     }
 
     pub unsafe fn dr2(&self) -> Address {
-        cpu_get_dr(self.handle, DrReg::Dr2 as _)
+        cpu_get_dr(self.handle, DRegs::Dr2 as _)
     }
 
     pub unsafe fn set_dr2(&self, v: Address) {
-        cpu_set_dr(self.handle, DrReg::Dr2 as _, v)
+        cpu_set_dr(self.handle, DRegs::Dr2 as _, v)
     }
 
     pub unsafe fn dr3(&self) -> Address {
-        cpu_get_dr(self.handle, DrReg::Dr3 as _)
+        cpu_get_dr(self.handle, DRegs::Dr3 as _)
     }
 
     pub unsafe fn set_dr3(&self, v: Address) {
-        cpu_set_dr(self.handle, DrReg::Dr3 as _, v)
+        cpu_set_dr(self.handle, DRegs::Dr3 as _, v)
     }
 
     pub unsafe fn dr6(&self) -> u32 {
@@ -417,6 +630,14 @@ impl Cpu {
         cpu_set_cr4(self.handle, v)
     }
 
+    pub unsafe fn cr8(&self) -> u64 {
+        cpu_get_cr8(self.handle) as _
+    }
+
+    pub unsafe fn set_cr8(&self, v: u64) {
+        cpu_set_cr8(self.handle, v as _)
+    }
+
     pub unsafe fn efer(&self) -> u32 {
         cpu_get_efer(self.handle)
     }
@@ -443,12 +664,12 @@ impl Cpu {
         cpu_set_kernel_gs_base(self.handle, v)
     }
 
-    pub unsafe fn sysenter_cs(&self) -> u32 {
-        cpu_get_sysenter_cs(self.handle)
+    pub unsafe fn sysenter_cs(&self) -> u64 {
+        cpu_get_sysenter_cs(self.handle) as _
     }
 
-    pub unsafe fn set_sysenter_cs(&self, v: u32) {
-        cpu_set_sysenter_cs(self.handle, v)
+    pub unsafe fn set_sysenter_cs(&self, v: u64) {
+        cpu_set_sysenter_cs(self.handle, v as _)
     }
 
     pub unsafe fn sysenter_eip(&self) -> Address {
@@ -491,16 +712,105 @@ impl Cpu {
         cpu_set_cstar(self.handle, v)
     }
 
-    pub unsafe fn fmask(&self) -> u32 {
-        cpu_get_fmask(self.handle)
+    pub unsafe fn sfmask(&self) -> u64 {
+        cpu_get_fmask(self.handle) as _
     }
 
-    pub unsafe fn set_fmask(&self, v: u32) {
-        cpu_set_fmask(self.handle, v)
+    pub unsafe fn set_sfmask(&self, v: u64) {
+        cpu_set_fmask(self.handle, v as _)
     }
 
+    pub unsafe fn tsc(&self) -> u64 {
+        cpu_get_tsc(self.handle)
+    }
 
-    // TODO pat
+    pub unsafe fn set_tsc(&self, v: u64) {
+        cpu_set_tsc(self.handle, v)
+    }
+
+    pub unsafe fn apic_base(&self) -> PhyAddress {
+        cpu_get_apicbase(self.handle)
+    }
+
+    pub unsafe fn set_apic_base(&self, v: PhyAddress) {
+        cpu_set_apicbase(self.handle, v)
+    }
+
+    pub unsafe fn pat(&self) -> u64 {
+        cpu_get_pat(self.handle)
+    }
+
+    pub unsafe fn set_pat(&self, v: u64) {
+        cpu_set_pat(self.handle, v)
+    }
+
+    pub unsafe fn tsc_aux(&self) -> u64 {
+        cpu_get_tsc_aux(self.handle) as _
+    }
+
+    pub unsafe fn set_tsc_aux(&self, v: u64) {
+        cpu_set_tsc_aux(self.handle, v as _)
+    }
+
     // TODO mtrrphys?
 
+    // zmm
+
+    pub unsafe fn zmm(&self, idx: usize) -> Zmm {
+        assert!(idx < 32);
+        let mut v = Zmm { q: [0; 8] };
+        cpu_get_zmm(self.handle, idx as _, &mut v as *mut _ as *mut u64);
+
+        v
+    }
+
+    pub unsafe fn set_zmm(&self, idx: usize, v: Zmm) {
+        assert!(idx < 32);
+        cpu_set_zmm(self.handle, idx as _, &v as *const _ as *const u64)
+    }
+
+    // FP
+
+    pub unsafe fn fp_cw(&self) -> u16 {
+        cpu_get_fp_cw(self.handle)
+    }
+
+    pub unsafe fn set_fp_cw(&self, v: u16) {
+        cpu_set_fp_cw(self.handle, v)
+    }
+
+    pub unsafe fn fp_sw(&self) -> u16 {
+        cpu_get_fp_sw(self.handle)
+    }
+
+    pub unsafe fn set_fp_sw(&self, v: u16) {
+        cpu_set_fp_sw(self.handle, v)
+    }
+
+    pub unsafe fn fp_tw(&self) -> u16 {
+        cpu_get_fp_tw(self.handle)
+    }
+
+    pub unsafe fn set_fp_tw(&self, v: u16) {
+        cpu_set_fp_tw(self.handle, v)
+    }
+
+    pub unsafe fn fp_op(&self) -> u16 {
+        cpu_get_fp_op(self.handle)
+    }
+
+    pub unsafe fn set_fp_op(&self, v: u16) {
+        cpu_set_fp_op(self.handle, v)
+    }
+
+
+    pub unsafe fn fp_st(&self, idx: usize) -> u64 {
+        assert!(idx < 8);
+        cpu_get_fp_st(self.handle, idx as _)
+    }
+
+    pub unsafe fn set_fp_st(&self, idx: usize, v: u64) {
+        assert!(idx < 8);
+        cpu_set_fp_st(self.handle, idx as _, v)
+    }
 }

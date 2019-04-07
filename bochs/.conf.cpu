@@ -23,6 +23,7 @@ export CXXFLAGS
   --enable-handlers-chaining \
   --enable-cpu-level=6 \
   --enable-x86-64 \
+  --enable-avx \
   --enable-vmx=2 \
   --enable-pci \
   --enable-instrumentation=../cabi \

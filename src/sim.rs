@@ -51,8 +51,10 @@ lazy_static! {
                     cstr!("ssse3"),
                     cstr!("sse4_1"),
                     cstr!("sse4_2"),
+                    cstr!("avx"),
+                    cstr!("avx2"),
                 ],
-                6
+                8
             )
         );
 
@@ -68,6 +70,7 @@ lazy_static! {
 
         m.insert("cpuid.level", ParamNum::new(cstr!("level"), 5, 6, 6));
         m.insert("cpuid.vmx", ParamNum::new(cstr!("vmx"), 0, 2, 2));
+        m.insert("cpuid.bmi", ParamNum::new(cstr!("bmi"), 0, 2, 2));
 
         m
     };
@@ -93,6 +96,11 @@ lazy_static! {
         m.insert("cpuid.mwait", ParamBool::new(cstr!("mwait"), false));
         m.insert("cpuid.movbe", ParamBool::new(cstr!("movbe"), false));
         m.insert("cpuid.1g_pages", ParamBool::new(cstr!("1g_pages"), false));
+        m.insert("cpuid.avx_f16c", ParamBool::new(cstr!("avx_f16c"), true));
+        m.insert("cpuid.avx_fma", ParamBool::new(cstr!("avx_fma"), true));
+        m.insert("cpuid.fma4", ParamBool::new(cstr!("fma4"), false));
+        m.insert("cpuid.xop", ParamBool::new(cstr!("xop"), false));
+        m.insert("cpuid.tbm", ParamBool::new(cstr!("tbm"), false));
 
         m.insert("cpu.cpuid_limit_winnt", ParamBool::new(cstr!("cpuid_limit_winnt"), false));
         m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_bad_msrs"), false));

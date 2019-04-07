@@ -62,6 +62,16 @@ BOCHSAPI bx_address cpu_get_pc(unsigned id) {
     return bx_cpu_array[id]->get_instruction_pointer();
 }
 
+BOCHSAPI void cpu_set_pc(unsigned id, Bit64u val) {
+    bx_cpu_array[id]->gen_reg[BX_64BIT_REG_RIP].rrx = val;
+    bx_cpu_array[id]->prev_rip = val;
+}
+
+BOCHSAPI void cpu_set_sp(unsigned id, Bit64u val) {
+        bx_cpu_array[id]->gen_reg[BX_64BIT_REG_RSP].rrx = val;
+        bx_cpu_array[id]->prev_rsp = val;
+}
+
 BOCHSAPI Bit64u cpu_get_reg64(unsigned id, unsigned reg) {
     return bx_cpu_array[id]->get_reg64(reg);
 }
@@ -75,7 +85,7 @@ BOCHSAPI Bit32u cpu_get_eflags(unsigned id) {
 }
 
 BOCHSAPI void cpu_set_eflags(unsigned id, Bit32u eflags) {
-    bx_cpu_array[id]->eflags = eflags;
+    bx_cpu_array[id]->setEFlags(eflags);
 }
 
 // TODO implement get segment registers
@@ -95,29 +105,29 @@ BOCHSAPI void cpu_set_dr(unsigned id, unsigned dr, bx_address v) {
 }
 
 BOCHSAPI Bit32u cpu_get_dr6(unsigned id) {
-    return bx_cpu_array[id]->dr6.val32;
+    return bx_cpu_array[id]->dr6.get32();
 }
 
 BOCHSAPI void cpu_set_dr6(unsigned id, Bit32u v) {
-    bx_cpu_array[id]->dr6.val32 = v;
+    bx_cpu_array[id]->dr6.set32(v);
 }
 
 BOCHSAPI Bit32u cpu_get_dr7(unsigned id) {
-    return bx_cpu_array[id]->dr7.val32;
+    return bx_cpu_array[id]->dr7.get32();
 }
 
 BOCHSAPI void cpu_set_dr7(unsigned id, Bit32u v) {
-    bx_cpu_array[id]->dr7.val32 = v;
+    bx_cpu_array[id]->dr7.set32(v);
 }
 
 // control registers
 
 BOCHSAPI Bit32u cpu_get_cr0(unsigned id) {
-    return bx_cpu_array[id]->cr0.val32;
+    return bx_cpu_array[id]->cr0.get32();
 }
 
 BOCHSAPI void cpu_set_cr0(unsigned id, Bit32u v) {
-    bx_cpu_array[id]->cr0.val32 = v;
+    bx_cpu_array[id]->cr0.set32(v);
 }
 
 BOCHSAPI bx_address cpu_get_cr2(unsigned id) {
@@ -137,27 +147,35 @@ BOCHSAPI void cpu_set_cr3(unsigned id, bx_address v) {
 }
 
 BOCHSAPI Bit32u cpu_get_cr4(unsigned id) {
-    return bx_cpu_array[id]->cr4.val32;
+    return bx_cpu_array[id]->cr4.get32();
 }
 
 BOCHSAPI void cpu_set_cr4(unsigned id, Bit32u v) {
-    bx_cpu_array[id]->cr4.val32 = v;
+    bx_cpu_array[id]->cr4.set32(v);
+}
+
+BOCHSAPI Bit32u cpu_get_cr8(unsigned id) {
+    return bx_cpu_array[id]->get_cr8();
+}
+
+BOCHSAPI void cpu_set_cr8(unsigned id, Bit32u v) {
+    bx_cpu_array[id]->lapic.set_tpr((v & 0xf) << 4);
 }
 
 BOCHSAPI Bit32u cpu_get_efer(unsigned id) {
-    return bx_cpu_array[id]->efer.val32;
+    return bx_cpu_array[id]->efer.get32();
 }
 
 BOCHSAPI void cpu_set_efer(unsigned id, Bit32u v) {
-    bx_cpu_array[id]->efer.val32 = v;
+    bx_cpu_array[id]->efer.set32(v);
 }
 
 BOCHSAPI Bit32u cpu_get_xcr0(unsigned id) {
-    return bx_cpu_array[id]->xcr0.val32;
+    return bx_cpu_array[id]->xcr0.get32();
 }
 
 BOCHSAPI void cpu_set_xcr0(unsigned id, Bit32u v) {
-    bx_cpu_array[id]->xcr0.val32 = v;
+    bx_cpu_array[id]->xcr0.set32(v);
 }
 
 // model specific registers
@@ -225,6 +243,138 @@ BOCHSAPI Bit32u cpu_get_fmask(unsigned id) {
 BOCHSAPI void cpu_set_fmask(unsigned id, Bit32u v) {
     bx_cpu_array[id]->msr.fmask = v;
 }
+
+BOCHSAPI Bit64u cpu_get_tsc(unsigned id) {
+    return bx_cpu_array[id]->get_TSC();
+}
+
+BOCHSAPI void cpu_set_tsc(unsigned id, Bit64u v) {
+    bx_cpu_array[id]->set_TSC(v);
+}
+
+BOCHSAPI Bit64u cpu_get_tsc_aux(unsigned id) {
+    return bx_cpu_array[id]->msr.tsc_aux;
+}
+
+BOCHSAPI void cpu_set_tsc_aux(unsigned id, Bit32u v) {
+    bx_cpu_array[id]->msr.tsc_aux = v;
+}
+
+BOCHSAPI bx_phy_address cpu_get_apicbase(unsigned id) {
+    return bx_cpu_array[id]->msr.apicbase;
+}
+
+BOCHSAPI void cpu_set_apicbase(unsigned id, bx_phy_address v) {
+    bx_cpu_array[id]->msr.apicbase = v;
+}
+
+BOCHSAPI Bit64u cpu_get_pat(unsigned id) {
+    return bx_cpu_array[id]->msr.pat._u64;
+}
+
+BOCHSAPI void cpu_set_pat(unsigned id, Bit64u v) {
+    bx_cpu_array[id]->msr.pat._u64 = v;
+}
+
+
+
+// ZMM
+
+BOCHSAPI void cpu_get_zmm(unsigned id, unsigned reg, Bit64u z[]) {
+#if BX_SUPPORT_EVEX
+    z[0] = bx_cpu_array[id]->vmm[reg].zmm_u64[0];
+    z[1] = bx_cpu_array[id]->vmm[reg].zmm_u64[1];
+    z[2] = bx_cpu_array[id]->vmm[reg].zmm_u64[2];
+    z[3] = bx_cpu_array[id]->vmm[reg].zmm_u64[3];
+    z[4] = bx_cpu_array[id]->vmm[reg].zmm_u64[4];
+    z[5] = bx_cpu_array[id]->vmm[reg].zmm_u64[5];
+    z[6] = bx_cpu_array[id]->vmm[reg].zmm_u64[6];
+    z[7] = bx_cpu_array[id]->vmm[reg].zmm_u64[7];
+#elif BX_SUPPORT_AVX
+    z[0] = bx_cpu_array[id]->vmm[reg].ymm_u64[0];
+    z[1] = bx_cpu_array[id]->vmm[reg].ymm_u64[1];
+    z[2] = bx_cpu_array[id]->vmm[reg].ymm_u64[2];
+    z[3] = bx_cpu_array[id]->vmm[reg].ymm_u64[3];
+    z[4] = 0;
+    z[5] = 0;
+    z[6] = 0;
+    z[7] = 0;
+#else
+    z[0] = bx_cpu_array[id]->vmm[reg].xmm_u64[0];
+    z[1] = bx_cpu_array[id]->vmm[reg].xmm_u64[1];
+    z[2] = 0;
+    z[3] = 0;
+    z[4] = 0;
+    z[5] = 0;
+    z[6] = 0;
+    z[7] = 0;
+#endif
+}
+
+BOCHSAPI void cpu_set_zmm(unsigned id, unsigned reg, Bit64u z[]) {
+#if BX_SUPPORT_EVEX
+    bx_cpu_array[id]->vmm[reg].zmm_u64[0] = z[0];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[1] = z[1];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[2] = z[2];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[3] = z[3];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[4] = z[4];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[5] = z[5];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[6] = z[6];
+    bx_cpu_array[id]->vmm[reg].zmm_u64[7] = z[7];
+#elif BX_SUPPORT_AVX
+    bx_cpu_array[id]->vmm[reg].ymm_u64[0] = z[0];
+    bx_cpu_array[id]->vmm[reg].ymm_u64[1] = z[1];
+    bx_cpu_array[id]->vmm[reg].ymm_u64[2] = z[2];
+    bx_cpu_array[id]->vmm[reg].ymm_u64[3] = z[3];
+#else
+    bx_cpu_array[id]->vmm[reg].xmm_u64[0] = z[0];
+    bx_cpu_array[id]->vmm[reg].xmm_u64[1] = z[1];
+#endif
+}
+
+// FP registers
+
+BOCHSAPI Bit16u cpu_get_fp_cw(unsigned id) {
+    return bx_cpu_array[id]->the_i387.cwd;
+}
+
+BOCHSAPI void cpu_set_fp_cw(unsigned id, Bit16u v) {
+    bx_cpu_array[id]->the_i387.cwd = v;
+}
+
+BOCHSAPI Bit16u cpu_get_fp_sw(unsigned id) {
+    return bx_cpu_array[id]->the_i387.swd;
+}
+
+BOCHSAPI void cpu_set_fp_sw(unsigned id, Bit16u v) {
+    bx_cpu_array[id]->the_i387.swd = v;
+}
+
+BOCHSAPI Bit16u cpu_get_fp_tw(unsigned id) {
+    return bx_cpu_array[id]->the_i387.twd;
+}
+
+BOCHSAPI void cpu_set_fp_tw(unsigned id, Bit16u v) {
+    bx_cpu_array[id]->the_i387.twd = v;
+}
+
+BOCHSAPI Bit16u cpu_get_fp_op(unsigned id) {
+    return bx_cpu_array[id]->the_i387.foo;
+}
+
+BOCHSAPI void cpu_set_fp_op(unsigned id, Bit16u v) {
+    bx_cpu_array[id]->the_i387.foo = v;
+}
+
+BOCHSAPI Bit64u cpu_get_fp_st(unsigned id, unsigned reg) {
+    float_status_t s;
+    return (Bit64u)floatx80_to_int64(bx_cpu_array[id]->the_i387.st_space[reg], s);
+}
+
+BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, Bit64u v) {
+    bx_cpu_array[id]->the_i387.st_space[reg] = int64_to_floatx80(v);
+}
+
 
 }
 

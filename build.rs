@@ -104,4 +104,7 @@ fn main() {
 
     println!("cargo:rustc-link-search=bochs/cpu/cpudb");
     println!("cargo:rustc-link-lib=static=cpudb");
+
+    println!("cargo:rustc-link-search=bochs/cpu/avx");
+    println!("cargo:rustc-link-lib=static=avx");
 }
