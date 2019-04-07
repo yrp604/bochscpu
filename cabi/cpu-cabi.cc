@@ -94,6 +94,26 @@ BOCHSAPI void cpu_set_seg(unsigned id, unsigned seg) {
     assert(false);
 }
 
+BOCHSAPI void cpu_get_gdtr(unsigned id, bx_address *base, Bit16u *limit) {
+    *base= bx_cpu_array[id]->gdtr.base;
+    *limit = bx_cpu_array[id]->gdtr.limit;
+}
+
+BOCHSAPI void cpu_set_gdtr(unsigned id, bx_address base, Bit16u limit) {
+    bx_cpu_array[id]->gdtr.base = base;
+    bx_cpu_array[id]->gdtr.limit = limit;
+}
+
+BOCHSAPI void cpu_get_idtr(unsigned id, bx_address *base, Bit16u *limit) {
+    *base= bx_cpu_array[id]->idtr.base;
+    *limit = bx_cpu_array[id]->idtr.limit;
+}
+
+BOCHSAPI void cpu_set_idtr(unsigned id, bx_address base, Bit16u limit) {
+    bx_cpu_array[id]->idtr.base = base;
+    bx_cpu_array[id]->idtr.limit = limit;
+}
+
 // debug registers
 
 BOCHSAPI bx_address cpu_get_dr(unsigned id, unsigned dr) {

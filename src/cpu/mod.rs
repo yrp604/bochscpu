@@ -25,6 +25,11 @@ extern "C" {
     fn cpu_get_eflags(id: u32) -> u32;
     fn cpu_set_eflags(id: u32, eflags: u32);
 
+    fn cpu_get_gdtr(id: u32, base: *mut Address, limit: *mut u16);
+    fn cpu_set_gdtr(id: u32, base: Address, limit: u16);
+    fn cpu_get_idtr(id: u32, base: *mut Address, limit: *mut u16);
+    fn cpu_set_idtr(id: u32, base: Address, limit: u16);
+
     fn cpu_get_dr(id: u32, reg: u32) -> Address;
     fn cpu_set_dr(id: u32, reg: u32, val: Address);
     fn cpu_get_dr6(id: u32) -> u32;
@@ -118,6 +123,12 @@ enum DRegs {
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct Zmm {
     q: [u64; 8]
+}
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub struct GlobalSeg {
+    base: Address,
+    limit: u16,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -245,6 +256,9 @@ impl Cpu {
             r15: self.r15(),
             rflags: self.rflags(),
 
+            gdtr: self.gdtr(),
+            idtr: self.idtr(),
+
             dr0: self.dr0(),
             dr1: self.dr1(),
             dr2: self.dr2(),
@@ -347,6 +361,9 @@ impl Cpu {
         self.set_r14(s.r14);
         self.set_r15(s.r15);
         self.set_rflags(s.rflags);
+
+        self.set_gdtr(s.gdtr);
+        self.set_idtr(s.idtr);
 
         self.set_dr0(s.dr0);
         self.set_dr1(s.dr1);
@@ -545,6 +562,32 @@ impl Cpu {
 
     // segment registers
     // TODO
+
+    pub unsafe fn gdtr(&self) -> GlobalSeg {
+        let mut base = 0;
+        let mut limit = 0;
+
+        cpu_get_gdtr(self.handle, &mut base, &mut limit);
+
+        GlobalSeg { base, limit }
+    }
+
+    pub unsafe fn set_gdtr(&self, gdtr: GlobalSeg) {
+        cpu_set_gdtr(self.handle, gdtr.base, gdtr.limit)
+    }
+
+    pub unsafe fn idtr(&self) -> GlobalSeg {
+        let mut base = 0;
+        let mut limit = 0;
+
+        cpu_get_idtr(self.handle, &mut base, &mut limit);
+
+        GlobalSeg { base, limit }
+    }
+
+    pub unsafe fn set_idtr(&self, idtr: GlobalSeg) {
+        cpu_set_idtr(self.handle, idtr.base, idtr.limit)
+    }
 
     // debug registers
 

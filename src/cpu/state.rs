@@ -1,4 +1,4 @@
-use crate::cpu::Zmm;
+use crate::cpu::{GlobalSeg, Zmm};
 
 pub struct State {
     pub rax: u64,
@@ -23,6 +23,8 @@ pub struct State {
     // seg regs
 
     // idtr + friends
+    pub gdtr: GlobalSeg,
+    pub idtr: GlobalSeg,
 
     pub cr0: u32,
     pub cr2: u64,
