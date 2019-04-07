@@ -9,7 +9,7 @@ $ svn co http://svn.code.sf.net/p/bochs/code/trunk/bochs bochs
 $ cd bochs
 $ svn -r13555 up # check out the second to last revision that actually builds
 $ source .conf.cpu
-$ make
+$ make # this command should fail with an error about libinstrument.a
 $ cd ..
 $ cargo build
 ```

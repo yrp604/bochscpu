@@ -90,8 +90,107 @@ BOCHSAPI void cpu_set_eflags(unsigned id, Bit32u eflags) {
 
 // TODO implement get segment registers
 
-BOCHSAPI void cpu_set_seg(unsigned id, unsigned seg) {
-    assert(false);
+void get_seg(
+        unsigned id,
+        bx_segment_reg_t *seg,
+        Bit32u *present,
+        Bit16u *selector,
+        bx_address *base,
+        Bit32u *limit,
+        Bit16u *attr)
+{
+    *present  = seg->cache.valid;
+    *base     = seg->cache.u.segment.base;
+    *limit    = seg->cache.u.segment.limit_scaled;
+    *selector = seg->selector.value;
+    *attr     = (bx_cpu_array[id]->get_descriptor_h(&seg->cache) >> 8) & 0xffff;
+}
+
+void set_seg(
+        unsigned id,
+        bx_segment_reg_t *seg,
+        Bit32u present,
+        Bit16u selector,
+        bx_address base,
+        Bit32u limit,
+        Bit16u attr)
+{
+    bx_cpu_array[id]->set_segment_ar_data(
+            seg,
+            present,
+            selector,
+            base,
+            limit,
+            attr
+    );
+}
+
+BOCHSAPI void cpu_get_seg(
+        unsigned id,
+        unsigned sreg,
+        Bit32u *present,
+        Bit16u *selector,
+        bx_address *base,
+        Bit32u *limit,
+        Bit16u *attr)
+{
+    return get_seg(id, &bx_cpu_array[id]->sregs[sreg], present, selector, base, limit, attr);
+}
+
+BOCHSAPI void cpu_set_seg(
+        unsigned id,
+        unsigned sreg,
+        Bit32u present,
+        Bit16u selector,
+        bx_address base,
+        Bit32u limit,
+        Bit16u attr)
+{
+    return set_seg(id, &bx_cpu_array[id]->sregs[sreg], present, selector, base, limit, attr);
+}
+
+BOCHSAPI void cpu_get_ldtr(
+        unsigned id,
+        Bit32u *present,
+        Bit16u *selector,
+        bx_address *base,
+        Bit32u *limit,
+        Bit16u *attr)
+{
+    return get_seg(id, &bx_cpu_array[id]->ldtr, present, selector, base, limit, attr);
+}
+
+BOCHSAPI void cpu_set_ldtr(
+        unsigned id,
+        Bit32u present,
+        Bit16u selector,
+        bx_address base,
+        Bit32u limit,
+        Bit16u attr)
+{
+    return set_seg(id, &bx_cpu_array[id]->ldtr, present, selector, base, limit, attr);
+}
+
+BOCHSAPI void cpu_get_tr(
+        unsigned id,
+        Bit32u *present,
+        Bit16u *selector,
+        bx_address *base,
+        Bit32u *limit,
+        Bit16u *attr)
+{
+    return get_seg(id, &bx_cpu_array[id]->tr, present, selector, base, limit, attr);
+}
+
+BOCHSAPI void cpu_set_tr(
+        unsigned id,
+        Bit32u present,
+        Bit16u selector,
+        bx_address base,
+        Bit32u limit,
+        Bit16u attr)
+{
+    return set_seg(id, &bx_cpu_array[id]->tr, present, selector, base, limit, attr);
 }
 
 BOCHSAPI void cpu_get_gdtr(unsigned id, bx_address *base, Bit16u *limit) {

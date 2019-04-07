@@ -1,8 +1,8 @@
 use crate::{Address, PhyAddress, NUM_CPUS};
 use crate::syncunsafecell::SyncUnsafeCell;
 
-pub mod state;
-use state::State;
+mod state;
+pub use state::State;
 
 // look at lock_api crate to see if I can figure out how to do cpu locking
 // so I dont need to make everything unsafe
@@ -25,6 +25,56 @@ extern "C" {
     fn cpu_get_eflags(id: u32) -> u32;
     fn cpu_set_eflags(id: u32, eflags: u32);
 
+    fn cpu_get_seg(
+        id: u32,
+        seg: u32,
+        present: *mut u32,
+        selector: *mut u16,
+        base: *mut Address,
+        limit: *mut u32,
+        attr: *mut u16,
+    );
+    fn cpu_set_seg(
+        id: u32,
+        seg: u32,
+        present: u32,
+        selector: u16,
+        base: Address,
+        limit: u32,
+        attr: u16,
+    );
+    fn cpu_get_ldtr(
+        id: u32,
+        present: *mut u32,
+        selector: *mut u16,
+        base: *mut Address,
+        limit: *mut u32,
+        attr: *mut u16,
+    );
+    fn cpu_set_ldtr(
+        id: u32,
+        present: u32,
+        selector: u16,
+        base: Address,
+        limit: u32,
+        attr: u16,
+    );
+    fn cpu_get_tr(
+        id: u32,
+        present: *mut u32,
+        selector: *mut u16,
+        base: *mut Address,
+        limit: *mut u32,
+        attr: *mut u16,
+    );
+    fn cpu_set_tr(
+        id: u32,
+        present: u32,
+        selector: u16,
+        base: Address,
+        limit: u32,
+        attr: u16,
+    );
     fn cpu_get_gdtr(id: u32, base: *mut Address, limit: *mut u16);
     fn cpu_set_gdtr(id: u32, base: Address, limit: u16);
     fn cpu_get_idtr(id: u32, base: *mut Address, limit: *mut u16);
@@ -112,6 +162,15 @@ enum GpRegs {
     // unused Rip = 16,
 }
 
+enum SegRegs {
+    Es = 0,
+    Cs = 1,
+    Ss = 2,
+    Ds = 3,
+    Fs = 4,
+    Gs = 5
+}
+
 enum DRegs {
     Dr0 = 0,
     Dr1 = 1,
@@ -122,18 +181,28 @@ enum DRegs {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct Zmm {
-    q: [u64; 8]
+    pub q: [u64; 8]
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 pub struct GlobalSeg {
-    base: Address,
-    limit: u16,
+    pub base: Address,
+    pub limit: u16,
+}
+
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+pub struct Seg {
+    pub present: bool,
+    pub selector: u16,
+    pub base: Address,
+    pub limit: u32,
+    pub attr: u16,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum StopReason {
     None,
+    IO,
     Timeout,
 }
 
@@ -171,7 +240,7 @@ impl Cpu {
         Self { handle: id }
     }
 
-    pub unsafe fn new_with_state(id: u32, s: State) -> Self {
+    pub unsafe fn new_with_state(id: u32, s: &State) -> Self {
         let c = Self::new(id);
         c.set_state(s);
 
@@ -182,7 +251,7 @@ impl Cpu {
         Self { handle: id }
     }
 
-    pub unsafe fn from_with_state(id: u32, s: State) -> Self {
+    pub unsafe fn from_with_state(id: u32, s: &State) -> Self {
         let c = Self::from(id);
 
         c.set_state(s);
@@ -256,6 +325,15 @@ impl Cpu {
             r15: self.r15(),
             rflags: self.rflags(),
 
+            es: self.es(),
+            cs: self.cs(),
+            ss: self.ss(),
+            ds: self.ds(),
+            fs: self.fs(),
+            gs: self.gs(),
+
+            ldtr: self.ldtr(),
+            tr: self.tr(),
             gdtr: self.gdtr(),
             idtr: self.idtr(),
 
@@ -343,7 +421,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn set_state(&self, s: State) {
+    pub unsafe fn set_state(&self, s: &State) {
         self.set_rax(s.rax);
         self.set_rcx(s.rcx);
         self.set_rdx(s.rdx);
@@ -362,6 +440,15 @@ impl Cpu {
         self.set_r15(s.r15);
         self.set_rflags(s.rflags);
 
+        self.set_es(s.es);
+        self.set_cs(s.cs);
+        self.set_ss(s.ss);
+        self.set_ds(s.ds);
+        self.set_fs(s.fs);
+        self.set_gs(s.gs);
+
+        self.set_ldtr(s.ldtr);
+        self.set_tr(s.tr);
         self.set_gdtr(s.gdtr);
         self.set_idtr(s.idtr);
 
@@ -561,7 +648,146 @@ impl Cpu {
     }
 
     // segment registers
-    // TODO
+
+    unsafe fn seg(&self, s: SegRegs) -> Seg {
+        let mut present = 0;
+        let mut selector = 0;
+        let mut base = 0;
+        let mut limit = 0;
+        let mut attr = 0;
+
+        cpu_get_seg(
+            self.handle,
+            s as _,
+            &mut present,
+            &mut selector,
+            &mut base,
+            &mut limit,
+            &mut attr,
+        );
+
+        Seg { present: present != 0, selector, base, limit, attr }
+    }
+
+    unsafe fn set_seg(&self, s: SegRegs, v: Seg) {
+        cpu_set_seg(
+            self.handle,
+            s as _,
+            v.present as _,
+            v.selector,
+            v.base,
+            v.limit,
+            v.attr
+        )
+    }
+
+    pub unsafe fn es(&self) -> Seg {
+        self.seg(SegRegs::Es)
+    }
+
+    pub unsafe fn set_es(&self, v: Seg) {
+        self.set_seg(SegRegs::Es, v);
+    }
+
+    pub unsafe fn cs(&self) -> Seg {
+        self.seg(SegRegs::Cs)
+    }
+
+    pub unsafe fn set_cs(&self, v: Seg) {
+        self.set_seg(SegRegs::Cs, v);
+    }
+
+    pub unsafe fn ss(&self) -> Seg {
+        self.seg(SegRegs::Ss)
+    }
+
+    pub unsafe fn set_ss(&self, v: Seg) {
+        self.set_seg(SegRegs::Ss, v);
+    }
+
+    pub unsafe fn ds(&self) -> Seg {
+        self.seg(SegRegs::Ds)
+    }
+
+    pub unsafe fn set_ds(&self, v: Seg) {
+        self.set_seg(SegRegs::Ds, v);
+    }
+
+    pub unsafe fn fs(&self) -> Seg {
+        self.seg(SegRegs::Fs)
+    }
+
+    pub unsafe fn set_fs(&self, v: Seg) {
+        self.set_seg(SegRegs::Fs, v);
+    }
+
+    pub unsafe fn gs(&self) -> Seg {
+        self.seg(SegRegs::Gs)
+    }
+
+    pub unsafe fn set_gs(&self, v: Seg) {
+        self.set_seg(SegRegs::Gs, v);
+    }
+
+    pub unsafe fn ldtr(&self) -> Seg {
+        let mut present = 0;
+        let mut selector = 0;
+        let mut base = 0;
+        let mut limit = 0;
+        let mut attr = 0;
+
+        cpu_get_ldtr(
+            self.handle,
+            &mut present,
+            &mut selector,
+            &mut base,
+            &mut limit,
+            &mut attr,
+        );
+
+        Seg { present: present != 0, selector, base, limit, attr }
+    }
+
+    pub unsafe fn set_ldtr(&self, v: Seg) {
+        cpu_set_ldtr(
+            self.handle,
+            v.present as _,
+            v.selector,
+            v.base,
+            v.limit,
+            v.attr
+        )
+    }
+
+    pub unsafe fn tr(&self) -> Seg {
+        let mut present = 0;
+        let mut selector = 0;
+        let mut base = 0;
+        let mut limit = 0;
+        let mut attr = 0;
+
+        cpu_get_tr(
+            self.handle,
+            &mut present,
+            &mut selector,
+            &mut base,
+            &mut limit,
+            &mut attr,
+        );
+
+        Seg { present: present != 0, selector, base, limit, attr }
+    }
+
+    pub unsafe fn set_tr(&self, v: Seg) {
+        cpu_set_tr(
+            self.handle,
+            v.present as _,
+            v.selector,
+            v.base,
+            v.limit,
+            v.attr
+        )
+    }
 
     pub unsafe fn gdtr(&self) -> GlobalSeg {
         let mut base = 0;
