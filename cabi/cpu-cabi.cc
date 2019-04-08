@@ -492,6 +492,22 @@ BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, Bit64u v) {
     bx_cpu_array[id]->the_i387.st_space[reg] = int64_to_floatx80(v);
 }
 
+BOCHSAPI Bit32u cpu_get_mxcsr(unsigned id) {
+    return bx_cpu_array[id]->mxcsr.mxcsr;
+}
+
+BOCHSAPI void cpu_set_mxcsr(unsigned id, Bit32u v) {
+    bx_cpu_array[id]->mxcsr.mxcsr = v;
+}
+
+BOCHSAPI Bit32u cpu_get_mxcsr_mask(unsigned id) {
+    return bx_cpu_array[id]->mxcsr_mask;
+}
+
+BOCHSAPI void cpu_set_mxcsr_mask(unsigned id, Bit32u v) {
+    bx_cpu_array[id]->mxcsr_mask = v;
+}
+
 
 }
 

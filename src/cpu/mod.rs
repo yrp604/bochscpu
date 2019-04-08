@@ -129,6 +129,10 @@ extern "C" {
 
     fn cpu_get_zmm(id: u32, reg: u32, val: *mut u64) -> Zmm;
     fn cpu_set_zmm(id: u32, reg: u32, val: *const u64);
+    fn cpu_get_mxcsr(id: u32) -> u32;
+    fn cpu_set_mxcsr(id:u32, val: u32);
+    fn cpu_get_mxcsr_mask(id: u32) -> u32;
+    fn cpu_set_mxcsr_mask(id:u32, val: u32);
 
     fn cpu_get_fp_cw(id: u32) -> u16;
     fn cpu_set_fp_cw(id: u32, val: u16);
@@ -203,6 +207,7 @@ pub struct Seg {
 pub enum StopReason {
     None,
     IO,
+    TripleFault,
     Timeout,
 }
 
@@ -400,6 +405,8 @@ impl Cpu {
                 self.zmm(30),
                 self.zmm(31),
             ],
+            mxcsr: self.mxcsr(),
+            mxcsr_mask: self.mxcsr_mask(),
 
             fpcw: self.fp_cw(),
             fpsw: self.fp_sw(),
@@ -415,10 +422,6 @@ impl Cpu {
                 self.fp_st(6),
                 self.fp_st(7),
             ],
-
-            // XXX
-            mxcsr: 0,
-            mxcsr_mask: 0,
         }
     }
 
@@ -486,6 +489,8 @@ impl Cpu {
         for (ii, z) in (&s.zmm).iter().enumerate() {
             self.set_zmm(ii, *z);
         }
+        self.set_mxcsr(s.mxcsr);
+        self.set_mxcsr_mask(s.mxcsr);
 
         self.set_fp_cw(s.fpcw);
         self.set_fp_sw(s.fpsw);
@@ -1040,6 +1045,23 @@ impl Cpu {
         assert!(idx < 32);
         cpu_set_zmm(self.handle, idx as _, &v as *const _ as *const u64)
     }
+
+    pub unsafe fn mxcsr(&self) -> u32 {
+        cpu_get_mxcsr(self.handle)
+    }
+
+    pub unsafe fn set_mxcsr(&self, v: u32) {
+        cpu_set_mxcsr(self.handle, v)
+    }
+
+    pub unsafe fn mxcsr_mask(&self) -> u32 {
+        cpu_get_mxcsr_mask(self.handle)
+    }
+
+    pub unsafe fn set_mxcsr_mask(&self, v: u32) {
+        cpu_set_mxcsr_mask(self.handle, v)
+    }
+
 
     // FP
 

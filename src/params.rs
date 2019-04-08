@@ -12,6 +12,9 @@ extern "C" {
 
     fn sim_new_param_bool(name: *const c_char, val: u32) -> *mut c_void;
     fn sim_delete_param_bool(n: *mut c_void);
+
+    fn sim_new_param_string(name: *const c_char, val: *const c_char, sz: u32) -> *mut c_void;
+    fn sim_delete_param_string(n: *mut c_void);
 }
 
 pub struct ParamEnum(pub *mut c_void, Vec<*const c_char>);
@@ -62,3 +65,24 @@ impl Drop for ParamBool {
     }
 }
 unsafe impl Sync for ParamBool {}
+
+pub struct ParamString(pub *mut c_void);
+impl ParamString {
+    pub fn new(name: &'static CStr, val: &'static CStr) -> Self {
+        let p = unsafe {
+            sim_new_param_string(
+                name.as_ptr(),
+                val.as_ptr(),
+                val.to_bytes_with_nul().len() as _
+            )
+        };
+
+        Self(p)
+    }
+}
+impl Drop for ParamString {
+    fn drop(&mut self) {
+        unsafe { sim_delete_param_string(self.0) }
+    }
+}
+unsafe impl Sync for ParamString {}

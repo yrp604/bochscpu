@@ -43,6 +43,21 @@ fn main() {
 }
 ```
 
+## snapshotting
+```
+0: kd> !gflag +ksl
+0: kd> sxe ld <your binary.exe>
+0: kd> g
+# run you binary, you should get a bp when its loaded...
+0: kd> bp target!function
+0: kd> g
+# should stop at your target
+0: kd> .dump /ka path\to\snap.dmp
+# we also need a bunch of msr's, docs on this forthcoming
+```
+
+## notes
+
 This guy allocates a lot of pages. You'll likely need to tweak sysctls:
 ```
 # sysctl vm.max_map_count # see the current limit

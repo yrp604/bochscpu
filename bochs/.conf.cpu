@@ -29,7 +29,7 @@ export CXXFLAGS
   --enable-instrumentation=../cabi \
   --enable-show-ips \
   --enable-smp \
+  --enable-configurable-msrs \
   --disable-disasm \
-  --disable-configurable-msrs \
   --with-nogui \
   ${CONFIGURE_ARGS}

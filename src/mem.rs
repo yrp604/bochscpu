@@ -40,6 +40,7 @@ extern "C" fn mem_read_phy(a: PhyAddress, sz: u32, dst: *mut u8) {
         let dst = slice::from_raw_parts_mut(dst, sz);
 
         dst.copy_from_slice(src);
+        trace!("mem read {:x?}", src);
     }
 }
 
@@ -57,5 +58,7 @@ extern "C" fn mem_write_phy(a: PhyAddress, sz: u32, src: *const u8) {
         let src = slice::from_raw_parts(src, sz);
 
         dst.copy_from_slice(src);
+        trace!("mem write {:x?}", src);
     }
+
 }

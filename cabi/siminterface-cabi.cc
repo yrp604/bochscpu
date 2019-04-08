@@ -5,6 +5,7 @@ extern "C" {
     bx_param_enum_c *sim_get_param_enum(const char *);
     bx_param_num_c *sim_get_param_num(const char *);
     bx_param_bool_c *sim_get_param_bool(const char *);
+    bx_param_string_c *sim_get_param_string(const char *);
 }
 }
 
@@ -14,6 +15,7 @@ public:
     virtual bx_param_enum_c *get_param_enum(const char *pname, bx_param_c *base=NULL);
     virtual bx_param_num_c *get_param_num(const char *pname, bx_param_c *base=NULL);
     virtual bx_param_bool_c *get_param_bool(const char *pname, bx_param_c *base=NULL);
+    virtual bx_param_string_c *get_param_string(const char *pname, bx_param_c *base=NULL);
 };
 
 bx_real_sim_c::bx_real_sim_c() {}
@@ -31,6 +33,11 @@ bx_param_num_c *bx_real_sim_c::get_param_num(const char *pname, bx_param_c *base
 bx_param_bool_c *bx_real_sim_c::get_param_bool(const char *pname, bx_param_c *base)
 {
     return rust::sim_get_param_bool(pname);
+}
+
+bx_param_string_c *bx_real_sim_c::get_param_string(const char *pname, bx_param_c *base)
+{
+    return rust::sim_get_param_string(pname);
 }
 
 extern "C" {
@@ -82,6 +89,22 @@ BOCHSAPI bx_param_bool_c* sim_new_param_bool(const char *name, bx_bool val)
 }
 
 BOCHSAPI void sim_delete_param_bool(bx_param_bool_c *b) {
+    delete b;
+}
+
+BOCHSAPI bx_param_string_c* sim_new_param_string(const char *name, const char *val, unsigned max_sz)
+{
+    return new bx_param_string_c(
+            NULL,
+            name,
+            NULL,
+            NULL,
+            val,
+            max_sz
+    );
+}
+
+BOCHSAPI void sim_delete_param_string(bx_param_string_c *b) {
     delete b;
 }
 }

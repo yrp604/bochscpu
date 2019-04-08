@@ -105,10 +105,21 @@ lazy_static! {
 
         m.insert("cpu.cpuid_limit_winnt", ParamBool::new(cstr!("cpuid_limit_winnt"), false));
         m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_bad_msrs"), false));
-        m.insert("cpu.reset_on_triple_fault", ParamBool::new(cstr!("ignore_bad_msrs"), false));
+        m.insert("cpu.reset_on_triple_fault", ParamBool::new(cstr!("reset_on_triple_fault"), false));
+        m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_base_msrs"), true));
 
         m
     };
+
+    static ref PARAMS_STRING: BTreeMap<&'static str, ParamString> = {
+        let mut m = BTreeMap::new();
+
+        // this key just needs to exist, doesnt need to be a valid file name
+        m.insert("cpu.msrs", ParamString::new(cstr!("msrs"), cstr!("")));
+
+        m
+    };
+
 }
 
 #[no_mangle]
@@ -162,6 +173,25 @@ extern "C" fn sim_get_param_bool(p: *const c_char) -> *mut c_void {
     match PARAMS_BOOL.get(&s) {
         None => {
             warn!("no bool parameter: {}", s);
+            0 as *mut c_void
+        },
+        Some(v) => v.0,
+    }
+}
+
+#[no_mangle]
+extern "C" fn sim_get_param_string(p: *const c_char) -> *mut c_void {
+    let s = unsafe {
+        assert!(!p.is_null());
+
+        CStr::from_ptr(p).to_str().unwrap()
+    };
+
+    trace!("looking up string param for {}...", s);
+
+    match PARAMS_STRING.get(&s) {
+        None => {
+            warn!("no string parameter: {}", s);
             0 as *mut c_void
         },
         Some(v) => v.0,
