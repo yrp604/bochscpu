@@ -2,6 +2,7 @@
 
 bx_pc_system_c::bx_pc_system_c() {
     a20_mask =  BX_CONST64(0xffffffffffffffff);
+    kill_bochs_request = 0;
 }
 
 int bx_pc_system_c::register_timer(void *this_ptr, bx_timer_handler_t,

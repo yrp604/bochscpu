@@ -12,6 +12,7 @@ ctor = "0.1"
 lazy_static = "1"
 log = "0.4"
 unreachable = "1"
+mapping = { path = "../mapping-rs" }
 
 [build-dependencies]
 cc = "1"

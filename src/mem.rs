@@ -4,6 +4,8 @@ use std::slice;
 use crate::PhyAddress;
 use crate::syncunsafecell::SyncUnsafeCell;
 
+// XXX HACK
+use mapping::{Page, Prot};
 
 #[ctor]
 pub static MEM: SyncUnsafeCell<BTreeMap<PhyAddress, *mut u8>> = {
@@ -21,8 +23,20 @@ extern "C" fn mem_guest_to_host(a: PhyAddress, _rw: u32) -> *mut u8 {
     let page = a & !0xfff;
     let off = a & 0xfff;
 
+    // XXX HACK
     unsafe {
-        (*(mem().get(&page).unwrap())).add(off as usize)
+        if let Some(p) = mem().get(&page) {
+            return p.add(off as usize);
+        }
+        trace!("{:x} not in physmem, alloc new backing page...", a);
+        let p = Page::new(Prot::R | Prot::W).unwrap();
+
+        let r = p.base + off as usize;
+        mem().insert(page, p.base as _);
+
+        std::mem::forget(p);
+
+        r as _
     }
 }
 

@@ -105,7 +105,8 @@ lazy_static! {
 
         m.insert("cpu.cpuid_limit_winnt", ParamBool::new(cstr!("cpuid_limit_winnt"), false));
         m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_bad_msrs"), false));
-        m.insert("cpu.reset_on_triple_fault", ParamBool::new(cstr!("reset_on_triple_fault"), false));
+        // this is set to true assuming there is a hook on reset which will stop the emulation
+        m.insert("cpu.reset_on_triple_fault", ParamBool::new(cstr!("reset_on_triple_fault"), true));
         m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_base_msrs"), true));
 
         m

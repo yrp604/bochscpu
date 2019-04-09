@@ -144,6 +144,8 @@ extern "C" {
     fn cpu_set_fp_op(id: u32, val: u16);
     fn cpu_get_fp_st(id: u32, reg: u32) -> u64;
     fn cpu_set_fp_st(id: u32, reg: u32, val: u64);
+
+    fn cpu_kill(id: u32);
 }
 
 enum GpRegs {
@@ -504,6 +506,9 @@ impl Cpu {
         cpu_set_state(self.handle)
     }
 
+    pub unsafe fn kill(&self) {
+        cpu_kill(self.handle)
+    }
 
     //
     // regs below here

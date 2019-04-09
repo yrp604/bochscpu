@@ -508,7 +508,10 @@ BOCHSAPI void cpu_set_mxcsr_mask(unsigned id, Bit32u v) {
     bx_cpu_array[id]->mxcsr_mask = v;
 }
 
-
+BOCHSAPI void cpu_kill(unsigned id) {
+    bx_cpu_array[id]->async_event = 1;
+    bx_pc_system.kill_bochs_request = 1;
+}
 }
 
 Bit8u bx_cpu_count = 0xff; // max number of processsors
