@@ -146,6 +146,7 @@ extern "C" {
     fn cpu_set_fp_st(id: u32, reg: u32, val: u64);
 
     fn cpu_kill(id: u32);
+    fn cpu_clear_kill(id: u32);
 }
 
 enum GpRegs {
@@ -270,7 +271,7 @@ impl Cpu {
         self.handle
     }
 
-    pub unsafe fn delete(&mut self) {
+    pub unsafe fn delete(self) {
         cpu_delete(self.handle);
     }
 
@@ -292,6 +293,11 @@ impl Cpu {
     }
 
     pub unsafe fn set_run_state(&self, rs: RunState) {
+        match rs {
+            RunState::Go => cpu_clear_kill(self.handle),
+            RunState::Stop(_) => cpu_kill(self.handle),
+        };
+
         set_run_state(self.handle, rs)
     }
 
@@ -504,10 +510,6 @@ impl Cpu {
         }
 
         cpu_set_state(self.handle)
-    }
-
-    pub unsafe fn kill(&self) {
-        cpu_kill(self.handle)
     }
 
     //

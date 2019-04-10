@@ -15,7 +15,7 @@ BOCHSAPI void cpu_loop(unsigned id) {
 BOCHSAPI BX_CPU_C* cpu_new(unsigned id) {
     // bochs assumes that all things are init'd to zero, which breaks ASan so
     // we use placement new to zero the mem
-    void *zero = new uint8_t[sizeof(BX_CPU_C)];
+    void *zero = malloc(sizeof(BX_CPU_C));
     memset(zero, 0, sizeof(BX_CPU_C));
 
     BX_CPU_C *c = new (zero) BX_CPU_C(id);
@@ -33,7 +33,7 @@ BOCHSAPI BX_CPU_C* cpu_new(unsigned id) {
 BOCHSAPI void cpu_delete(unsigned id) {
     bx_cpu_array[id]->~BX_CPU_C();
 
-    delete[] bx_cpu_array[id];
+    free(bx_cpu_array[id]);
 
     bx_cpu_array[id] = NULL;
 }
@@ -506,6 +506,11 @@ BOCHSAPI Bit32u cpu_get_mxcsr_mask(unsigned id) {
 
 BOCHSAPI void cpu_set_mxcsr_mask(unsigned id, Bit32u v) {
     bx_cpu_array[id]->mxcsr_mask = v;
+}
+
+BOCHSAPI void cpu_clear_kill(unsigned id) {
+    bx_cpu_array[id]->async_event = 0;
+    bx_pc_system.kill_bochs_request = 0;
 }
 
 BOCHSAPI void cpu_kill(unsigned id) {
