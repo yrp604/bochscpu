@@ -145,8 +145,9 @@ extern "C" {
     fn cpu_get_fp_st(id: u32, reg: u32) -> u64;
     fn cpu_set_fp_st(id: u32, reg: u32, val: u64);
 
-    fn cpu_kill(id: u32);
-    fn cpu_clear_kill(id: u32);
+    fn cpu_killbit(id: u32) -> u32;
+    fn cpu_set_killbit(id: u32);
+    fn cpu_clear_killbit(id: u32);
 }
 
 enum GpRegs {
@@ -276,16 +277,16 @@ impl Cpu {
     }
 
     pub unsafe fn run(&self) -> RunState {
-        set_run_state(self.handle, RunState::Go);
+        self.set_run_state(RunState::Go);
 
-        loop {
+        while cpu_killbit(self.handle) == 0 {
             match run_state(self.handle) {
                 RunState::Stop(_) => break,
                 RunState::Go => cpu_loop(self.handle),
             }
         }
 
-        run_state(self.handle)
+        self.run_state()
     }
 
     pub unsafe fn run_state(&self) -> RunState {
@@ -294,8 +295,8 @@ impl Cpu {
 
     pub unsafe fn set_run_state(&self, rs: RunState) {
         match rs {
-            RunState::Go => cpu_clear_kill(self.handle),
-            RunState::Stop(_) => cpu_kill(self.handle),
+            RunState::Go => cpu_clear_killbit(self.handle),
+            RunState::Stop(_) => cpu_set_killbit(self.handle),
         };
 
         set_run_state(self.handle, rs)

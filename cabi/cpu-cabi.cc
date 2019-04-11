@@ -508,14 +508,18 @@ BOCHSAPI void cpu_set_mxcsr_mask(unsigned id, Bit32u v) {
     bx_cpu_array[id]->mxcsr_mask = v;
 }
 
-BOCHSAPI void cpu_clear_kill(unsigned id) {
-    bx_cpu_array[id]->async_event = 0;
-    bx_pc_system.kill_bochs_request = 0;
+BOCHSAPI unsigned cpu_killbit(unsigned id) {
+    return bx_pc_system.kill_bochs_request;
 }
 
-BOCHSAPI void cpu_kill(unsigned id) {
+BOCHSAPI void cpu_set_killbit(unsigned id) {
     bx_cpu_array[id]->async_event = 1;
     bx_pc_system.kill_bochs_request = 1;
+}
+
+BOCHSAPI void cpu_clear_killbit(unsigned id) {
+    bx_cpu_array[id]->async_event = 0;
+    bx_pc_system.kill_bochs_request = 0;
 }
 }
 

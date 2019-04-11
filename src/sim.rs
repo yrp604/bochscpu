@@ -73,6 +73,11 @@ lazy_static! {
         m.insert("cpuid.vmx", ParamNum::new(cstr!("vmx"), 0, 2, 2));
         m.insert("cpuid.bmi", ParamNum::new(cstr!("bmi"), 0, 2, 2));
 
+        // cannot find values for these vvv
+        m.insert("cpuid.stepping", ParamNum::new(cstr!("stepping"), 0, 0, 0));
+        m.insert("cpuid.model", ParamNum::new(cstr!("model"), 0, 0, 0));
+        m.insert("cpuid.family", ParamNum::new(cstr!("family"), 0, 6, 6));
+
         m
     };
 
@@ -117,6 +122,13 @@ lazy_static! {
 
         // this key just needs to exist, doesnt need to be a valid file name
         m.insert("cpu.msrs", ParamString::new(cstr!("msrs"), cstr!("")));
+        m.insert(
+            "cpuid.brand_string",
+            ParamString::new(
+                cstr!("       Intel(R) Core(TM) i7-2600K CPU @ 3.40GHz"),
+                cstr!("")
+            )
+        );
 
         m
     };
