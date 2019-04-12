@@ -401,6 +401,9 @@ extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
 
 //
 
+// You probably don't want this -- due to some as of yet unknown state that we
+// dont restore this will sometimes be called twice for a single guest
+// instruction. Use after_execution.
 pub unsafe fn before_execution<T: BeforeExecutionHook + 'static>(h: T) {
     BEFORE_EXECUTION_HOOKS.push(Box::new(h))
 }

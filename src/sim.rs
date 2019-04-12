@@ -15,13 +15,40 @@ lazy_static! {
     static ref PARAMS_ENUM: BTreeMap<&'static str, ParamEnum> = {
         let mut m = BTreeMap::new();
 
-        // FIXME this should probably be filled out. It might work now?
+        // from cpudb.h
         m.insert(
             "cpu.model",
             ParamEnum::new(
                 cstr!("model"),
-                &[cstr!("corei7_sandy_bridge_2600k")],
-                0
+                &[
+                    cstr!("bx_generic"),
+                    cstr!("pentium"),
+                    cstr!("pentium_mxx"),
+                    cstr!("amd_k6_2_chomper"),
+                    cstr!("p2_klamath"),
+                    cstr!("p3_katmai"),
+                    cstr!("p4_willamette"),
+                    cstr!("core_duo_t2500_yonah"),
+                    cstr!("atom_n270"),
+                    cstr!("p4_prescott_celeron_336"),
+                    cstr!("athlon64_clawhammer"),
+                    cstr!("athlon64_venice"),
+                    cstr!("turion64_tyler"),
+                    cstr!("phenom_8650_toliman"),
+                    cstr!("core2_penryn_t9600"),
+                    cstr!("corei5_lynnfield_750"),
+                    cstr!("corei5_arrandale_m520"),
+                    cstr!("corei7_sandy_bridge_2600k"),
+                    cstr!("zambezi"),
+                    cstr!("trinity_apu"),
+                    cstr!("ryzen"),
+                    cstr!("corei7_ivy_bridge_3770k"),
+                    cstr!("corei7_haswell_4770"),
+                    cstr!("broadwell_ult"),
+                    cstr!("corei7_skylake_x"),
+                    cstr!("corei3_cnl"),
+                ],
+                24
             )
         );
 
