@@ -152,7 +152,7 @@ lazy_static! {
         m.insert(
             "cpuid.brand_string",
             ParamString::new(
-                cstr!("       Intel(R) Core(TM) i7-2600K CPU @ 3.40GHz"),
+                cstr!("Intel(R) Core(TM) i7-7800X CPU @ 3.50GHz\0\0\0\0\0\0\0\0"),
                 cstr!("")
             )
         );

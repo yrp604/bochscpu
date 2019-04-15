@@ -3,6 +3,7 @@
 bx_pc_system_c::bx_pc_system_c() {
     a20_mask =  BX_CONST64(0xffffffffffffffff);
     kill_bochs_request = 0;
+    currCountdown = 1;
 }
 
 int bx_pc_system_c::register_timer(void *this_ptr, bx_timer_handler_t,
@@ -29,7 +30,11 @@ void bx_pc_system_c::deactivate_timer(unsigned int timer_index) { assert(false);
 int bx_pc_system_c::Reset(unsigned int) { assert(false); }
 
 bx_bool bx_pc_system_c::get_enable_a20(void) { assert(false); }
-void bx_pc_system_c::countdownEvent(void) { assert(false); }
+
+void bx_pc_system_c::countdownEvent(void)
+{
+    bx_pc_system.currCountdown = 1;
+}
 void bx_pc_system_c::invlpg(bx_address addr) { assert(false); }
 
 bx_pc_system_c bx_pc_system;

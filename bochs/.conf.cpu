@@ -3,10 +3,9 @@
 # .conf.cpu
 #
 
-CC="clang"
-CXX="clang++"
-#CFLAGS="-Wall -O3 -fomit-frame-pointer -pipe"    # for speed
-#CFLAGS="-Wall -g -pipe -fsanitize=address -fPIC"        # for development
+CC="gcc"
+CXX="g++"
+#CFLAGS="-Wall -O3 -fomit-frame-pointer -pipe -fPIC"    # for speed
 CFLAGS="-Wall -g -pipe -fPIC"        # for development
 CXXFLAGS="$CFLAGS"
 
