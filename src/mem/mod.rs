@@ -3,8 +3,10 @@ use std::slice;
 use crate::PhyAddress;
 use crate::syncunsafecell::SyncUnsafeCell;
 
-mod fnv_mem;
-pub use fnv_mem::{add_page, del_page, resolve_hva, resolve_hva_checked};
+// despite all the benchmarks claiming that fxhash + hashbrown wins, for our
+// benchmarks fnvhash + hashbrown seems to be the winning combo
+mod fastmap64_mem;
+pub use fastmap64_mem::{add_page, del_page, resolve_hva, resolve_hva_checked};
 
 
 #[ctor]
