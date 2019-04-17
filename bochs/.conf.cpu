@@ -3,10 +3,11 @@
 # .conf.cpu
 #
 
-CC="gcc"
-CXX="g++"
-#CFLAGS="-Wall -O3 -fomit-frame-pointer -pipe -fPIC"    # for speed
-CFLAGS="-Wall -g -pipe -fPIC"        # for development
+CC="clang-8"
+CXX="clang-8"
+#CFLAGS="-Wall -g -O3 -fomit-frame-pointer -pipe -fPIC -flto=thin"    # for speed
+CFLAGS="-Wall -g -O3 -fomit-frame-pointer -pipe -fPIC"    # for speed
+#CFLAGS="-Wall -g -pipe -fPIC"        # for development
 CXXFLAGS="$CFLAGS"
 
 export CC
