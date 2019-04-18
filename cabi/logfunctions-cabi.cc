@@ -26,7 +26,7 @@ logfunctions::logfunctions(void) {}
 logfunctions::~logfunctions(void) {}
 
 void logfunctions::error(const char *fmt, ...) {
-#ifdef RUST_CC_RELEASE
+#ifndef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -39,7 +39,7 @@ void logfunctions::error(const char *fmt, ...) {
 }
 
 void logfunctions::fatal1(const char *fmt, ...) {
-#ifdef RUST_CC_RELEASE
+#ifndef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -52,7 +52,7 @@ void logfunctions::fatal1(const char *fmt, ...) {
 }
 
 void logfunctions::info(const char *fmt, ...) {
-#ifdef RUST_CC_RELEASE
+#ifndef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -65,7 +65,7 @@ void logfunctions::info(const char *fmt, ...) {
 }
 
 void logfunctions::ldebug(const char *fmt, ...) {
-#ifdef RUST_CC_RELEASE
+#ifndef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -78,7 +78,7 @@ void logfunctions::ldebug(const char *fmt, ...) {
 }
 
 void logfunctions::panic(const char *fmt, ...) {
-#ifdef RUST_CC_RELEASE
+#ifndef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;

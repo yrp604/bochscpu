@@ -24,25 +24,18 @@ fn main() {
         .compile("mem-cabi");
     println!("cargo:rustc-link-lib=static=mem-cabi");
 
-    let profile = env::var("PROFILE").unwrap();
-    if profile == "release" {
-        cc::Build::new()
-            .define("RUST_CC_RELEASE", None)
-            .cpp(true)
-            .flag("-Wno-unused-parameter")
-            .include(Path::new("bochs"))
-            .include(Path::new("cabi"))
-            .file("cabi/logfunctions-cabi.cc")
-            .compile("logfunctions-cabi");
-    } else {
-        cc::Build::new()
-            .cpp(true)
-            .flag("-Wno-unused-parameter")
-            .include(Path::new("bochs"))
-            .include(Path::new("cabi"))
-            .file("cabi/logfunctions-cabi.cc")
-            .compile("logfunctions-cabi");
-    }
+    let profile = match env::var("PROFILE").unwrap().as_ref() {
+        "release" => Some("true"),
+        _ => None
+    };
+    cc::Build::new()
+        .define("RUST_CC_RELEASE", profile)
+        .cpp(true)
+        .flag("-Wno-unused-parameter")
+        .include(Path::new("bochs"))
+        .include(Path::new("cabi"))
+        .file("cabi/logfunctions-cabi.cc")
+        .compile("logfunctions-cabi");
     println!("cargo:rustc-link-lib=static=logfunctions-cabi");
 
     cc::Build::new()
