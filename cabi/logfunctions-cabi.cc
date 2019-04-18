@@ -3,7 +3,10 @@
 //
 // TODO when rust supports extern variadic functions, replace all of this
 // with var args versions
-
+//
+// 4/18/19 so because were stuck with this shit right now we spend a lot of
+// time inside vsnprintf, only to discard the formatted results. We'll hack
+// around this by not doing shit on release builds.
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -23,6 +26,7 @@ logfunctions::logfunctions(void) {}
 logfunctions::~logfunctions(void) {}
 
 void logfunctions::error(const char *fmt, ...) {
+#ifdef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -31,9 +35,11 @@ void logfunctions::error(const char *fmt, ...) {
 	va_end(args);
 
 	rust::logfunctions_error(buf);
+#endif
 }
 
 void logfunctions::fatal1(const char *fmt, ...) {
+#ifdef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -42,9 +48,11 @@ void logfunctions::fatal1(const char *fmt, ...) {
 	va_end(args);
 
 	rust::logfunctions_fatal1(buf);
+#endif
 }
 
 void logfunctions::info(const char *fmt, ...) {
+#ifdef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -53,9 +61,11 @@ void logfunctions::info(const char *fmt, ...) {
 	va_end(args);
 
 	rust::logfunctions_info(buf);
+#endif
 }
 
 void logfunctions::ldebug(const char *fmt, ...) {
+#ifdef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -64,9 +74,11 @@ void logfunctions::ldebug(const char *fmt, ...) {
 	va_end(args);
 
 	rust::logfunctions_ldebug(buf);
+#endif
 }
 
 void logfunctions::panic(const char *fmt, ...) {
+#ifdef RUST_CC_RELEASE
 	char buf[0x1000];
 
 	va_list args;
@@ -75,6 +87,7 @@ void logfunctions::panic(const char *fmt, ...) {
 	va_end(args);
 
 	rust::logfunctions_panic(buf);
+#endif
 }
 
 void logfunctions::put(const char *p, const char *q) {}
