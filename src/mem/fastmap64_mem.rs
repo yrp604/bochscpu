@@ -1,14 +1,13 @@
-use {
-    fnv::FnvHasher,
-    hashbrown::{HashMap, HashSet},
-    std::hash::BuildHasherDefault,
-};
+use std::hash::BuildHasherDefault;
 
-pub type FastMap64<K, V> = HashMap<K, V, BuildHasherDefault<FnvHasher>>;
+use fnv::FnvHasher;
+use hashbrown::HashMap;
 
 use crate::PhyAddress;
 use crate::mem::page_off;
 use crate::syncunsafecell::SyncUnsafeCell;
+
+pub type FastMap64<K, V> = HashMap<K, V, BuildHasherDefault<FnvHasher>>;
 
 #[ctor]
 pub static MEM: SyncUnsafeCell<FastMap64<PhyAddress, *mut u8>> = {

@@ -1,7 +1,14 @@
+use std::mem;
 use std::slice;
 
 use crate::PhyAddress;
 use crate::syncunsafecell::SyncUnsafeCell;
+
+mod phy;
+pub use phy::*;
+
+mod virt;
+pub use virt::*;
 
 // despite all the benchmarks claiming that fxhash + hashbrown wins, for our
 // benchmarks fnvhash + hashbrown seems to be the winning combo
@@ -27,7 +34,7 @@ pub unsafe fn fault(gpa: PhyAddress) {
 extern "C" fn mem_guest_to_host(gpa: PhyAddress, _rw: u32) -> *mut u8 {
     trace!("translating guest phys {:x}...", gpa);
 
-    unsafe { translate(gpa) }
+    unsafe { phy_translate(gpa) }
 }
 
 #[no_mangle]
@@ -37,7 +44,7 @@ extern "C" fn mem_read_phy(gpa: PhyAddress, sz: u32, dst: *mut u8) {
     let sz = sz as usize;
 
     unsafe {
-        let src_ptr = translate(gpa);
+        let src_ptr = phy_translate(gpa);
         let src = slice::from_raw_parts(src_ptr, sz);
         let dst = slice::from_raw_parts_mut(dst, sz);
 
@@ -53,7 +60,7 @@ extern "C" fn mem_write_phy(gpa: PhyAddress, sz: u32, src: *const u8) {
     let sz = sz as usize;
 
     unsafe {
-        let dst_ptr = translate(gpa);
+        let dst_ptr = phy_translate(gpa);
         let dst = slice::from_raw_parts_mut(dst_ptr, sz);
         let src = slice::from_raw_parts(src, sz);
 
@@ -62,7 +69,7 @@ extern "C" fn mem_write_phy(gpa: PhyAddress, sz: u32, src: *const u8) {
     }
 }
 
-pub unsafe fn translate(gpa: PhyAddress) -> *mut u8{
+pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8{
     if let Some(hva) = resolve_hva_checked(gpa) {
         return hva;
     }
