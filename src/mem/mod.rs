@@ -1,4 +1,3 @@
-use std::mem;
 use std::slice;
 
 use crate::PhyAddress;
@@ -13,7 +12,8 @@ pub use virt::*;
 // despite all the benchmarks claiming that fxhash + hashbrown wins, for our
 // benchmarks fnvhash + hashbrown seems to be the winning combo
 mod fastmap64_mem;
-pub use fastmap64_mem::{add_page, del_page, resolve_hva, resolve_hva_checked};
+pub use fastmap64_mem::{add_page, del_page};
+use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
 
 #[ctor]

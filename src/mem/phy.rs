@@ -1,7 +1,7 @@
 use std::mem;
 use std::slice;
 
-use crate::{Address, PhyAddress};
+use crate::PhyAddress;
 use crate::mem::phy_translate;
 
 pub fn phy_read_u64(gpa: PhyAddress) -> u64 {
