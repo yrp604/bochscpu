@@ -10,40 +10,6 @@ pub fn phy_read_u64(gpa: PhyAddress) -> u64 {
     u64::from_le_bytes(buf)
 }
 
-pub fn phy_read_u32(gpa: PhyAddress) -> u32 {
-    let mut buf = [0; mem::size_of::<u32>()];
-    phy_read_slice(gpa, &mut buf);
-    u32::from_le_bytes(buf)
-}
-
-pub fn phy_read_u16(gpa: PhyAddress) -> u16 {
-    let mut buf = [0; mem::size_of::<u16>()];
-    phy_read_slice(gpa, &mut buf);
-    u16::from_le_bytes(buf)
-}
-
-pub fn phy_read_u8(gpa: PhyAddress) -> u8 {
-    let mut buf = [0; mem::size_of::<u8>()];
-    phy_read_slice(gpa, &mut buf);
-    u8::from_le_bytes(buf)
-}
-
-pub fn phy_write_u64(gpa: PhyAddress, val: u64) {
-    phy_write(gpa, &val.to_le_bytes());
-}
-
-pub fn phy_write_u32(gpa: PhyAddress, val: u32) {
-    phy_write(gpa, &val.to_le_bytes());
-}
-
-pub fn phy_write_u16(gpa: PhyAddress, val: u16) {
-    phy_write(gpa, &val.to_le_bytes());
-}
-
-pub fn phy_write_u8(gpa: PhyAddress, val: u8) {
-    phy_write(gpa, &val.to_le_bytes());
-}
-
 pub fn phy_read_slice(gpa: PhyAddress, buf: &mut [u8]) {
     // make sure we dont span pages
     debug_assert!(gpa + (buf.len() as PhyAddress) < (gpa & !0xfff) + 0x1000);

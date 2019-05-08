@@ -1,5 +1,8 @@
+use serde::{Deserialize};
+
 use crate::cpu::{GlobalSeg, Seg, Zmm};
 
+#[derive(Clone, PartialEq, Eq, Debug, Hash, Deserialize)]
 pub struct State {
     pub rax: u64,
     pub rcx: u64,

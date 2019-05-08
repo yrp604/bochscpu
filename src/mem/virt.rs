@@ -1,3 +1,5 @@
+use std::iter;
+
 use crate::{Address, PhyAddress};
 use crate::mem::{phy_read_u64};
 
@@ -37,6 +39,30 @@ pub enum VirtMemError {
     PteNotPresent,
 }
 
+fn chunk(start: Address, sz: usize) -> impl Iterator<Item = (Address, usize)> {
+    let mut remaining = sz;
+    let mut base = start;
+
+    iter::from_fn(move || {
+        if remaining == 0 {
+            None
+        } else {
+            let chunk_base = base;
+
+            let chunk_sz = if base as usize + remaining > (base as usize & !0xfff) + 0x1000 {
+                ((base & !0xfff) + 0x1000 - base) as usize
+            } else {
+                remaining
+            };
+
+            base += chunk_sz as Address;
+            remaining -= chunk_sz;
+
+            Some((chunk_base, chunk_sz))
+        }
+    })
+}
+
 pub fn virt_read_checked(cr3: Address, gva: Address, buf: &mut Vec<u8>, sz: usize) -> Result<(), VirtMemError> {
     let gpa = virt_translate_checked(cr3, gva)?;
     Ok(())
@@ -52,7 +78,9 @@ pub fn virt_translate(cr3: PhyAddress, gva: Address) -> PhyAddress {
 }
 
 pub fn virt_translate_checked(cr3: PhyAddress, gva: Address) -> Result<PhyAddress, VirtMemError> {
-    let pml4e_addr = (cr3 & !0x1ff) + pml4_index(gva) * 8;
+    let pml4_base = cr3 & !0xfff;
+
+    let pml4e_addr = pml4_base + pml4_index(gva) * 8;
     let pml4e = phy_read_u64(pml4e_addr);
 
     let (pdpt_base, pml4e_flags) = base_flags(pml4e);

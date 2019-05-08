@@ -187,18 +187,18 @@ enum DRegs {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
 pub struct Zmm {
     pub q: [u64; 8]
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
 pub struct GlobalSeg {
     pub base: Address,
     pub limit: u16,
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
 pub struct Seg {
     pub present: bool,
     pub selector: u16,
