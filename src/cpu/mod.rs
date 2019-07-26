@@ -127,7 +127,7 @@ extern "C" {
     fn cpu_get_pat(id: u32) -> u64;
     fn cpu_set_pat(id: u32, val: u64);
 
-    fn cpu_get_zmm(id: u32, reg: u32, val: *mut u64) -> Zmm;
+    fn cpu_get_zmm(id: u32, reg: u32, val: *mut u64);
     fn cpu_set_zmm(id: u32, reg: u32, val: *const u64);
     fn cpu_get_mxcsr(id: u32) -> u32;
     fn cpu_set_mxcsr(id:u32, val: u32);
@@ -210,6 +210,8 @@ pub struct Seg {
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum StopReason {
     None,
+    Crash,
+    Done,
     IO,
     TripleFault,
     Timeout,
@@ -230,12 +232,16 @@ pub static CPU_RUN_STATES: SyncUnsafeCell<Vec<RunState>> = {
     SyncUnsafeCell::new(vec![RunState::Stop(StopReason::None); NUM_CPUS])
 };
 
+unsafe fn cpu_run_states() -> &'static mut Vec<RunState> {
+    &mut (*(CPU_RUN_STATES.0.get()))
+}
+
 pub unsafe fn run_state(id: u32) -> RunState {
-    (*(CPU_RUN_STATES.0.get()))[id as usize]
+    cpu_run_states()[id as usize]
 }
 
 pub unsafe fn set_run_state(id: u32, rs: RunState) {
-    (*(CPU_RUN_STATES.0.get()))[id as usize] = rs;
+    cpu_run_states()[id as usize] = rs;
 }
 
 pub struct Cpu {
@@ -1044,14 +1050,14 @@ impl Cpu {
     pub unsafe fn zmm(&self, idx: usize) -> Zmm {
         assert!(idx < 32);
         let mut v = Zmm { q: [0; 8] };
-        cpu_get_zmm(self.handle, idx as _, &mut v as *mut _ as *mut u64);
+        cpu_get_zmm(self.handle, idx as _, &mut v.q as *mut _ as *mut u64);
 
         v
     }
 
     pub unsafe fn set_zmm(&self, idx: usize, v: Zmm) {
         assert!(idx < 32);
-        cpu_set_zmm(self.handle, idx as _, &v as *const _ as *const u64)
+        cpu_set_zmm(self.handle, idx as _, &v.q as *const _ as *const u64)
     }
 
     pub unsafe fn mxcsr(&self) -> u32 {

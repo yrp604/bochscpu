@@ -1,7 +1,8 @@
 use std::iter;
+use std::mem;
 
 use crate::{Address, PhyAddress};
-use crate::mem::{phy_read_u64};
+use crate::mem::{phy_read_u64, phy_read_slice, phy_write};
 
 const fn pml4_index(gva: Address) -> u64 {
     gva >> (12 + (9 * 3)) & 0x1ff
@@ -20,11 +21,11 @@ const fn pt_index(gva: Address) -> u64 {
 }
 
 const fn base_flags(gpa: Address) -> (Address, u64) {
-    (gpa & !0x1ff, gpa & 0x1ff)
+    (gpa & !0xfff & 0x000f_ffff_ffff_ffff, gpa & 0x1ff)
 }
 
 const fn pte_flags(pte: Address) -> (PhyAddress, u64) {
-    (pte & !0xfff, pte & 0xfff)
+    (pte & !0xfff & 0x000f_ffff_ffff_ffff, pte & 0xfff)
 }
 
 const fn page_offset(gva: Address) -> u64 {
@@ -39,7 +40,33 @@ pub enum VirtMemError {
     PteNotPresent,
 }
 
-fn chunk(start: Address, sz: usize) -> impl Iterator<Item = (Address, usize)> {
+pub fn virt_read_u64(cr3: PhyAddress, gva: Address) -> u64 {
+    let mut buf = [0; mem::size_of::<u64>()];
+    virt_read_slice(cr3, gva, &mut buf);
+    u64::from_le_bytes(buf)
+}
+
+pub fn virt_read_u32(cr3: PhyAddress, gva: Address) -> u32 {
+    let mut buf = [0; mem::size_of::<u32>()];
+    virt_read_slice(cr3, gva, &mut buf);
+    u32::from_le_bytes(buf)
+}
+
+pub fn virt_read_u16(cr3: PhyAddress, gva: Address) -> u16 {
+    let mut buf = [0; mem::size_of::<u16>()];
+    virt_read_slice(cr3, gva, &mut buf);
+    u16::from_le_bytes(buf)
+}
+
+pub fn virt_read_u8(cr3: PhyAddress, gva: Address) -> u8 {
+    let mut buf = [0; mem::size_of::<u8>()];
+    virt_read_slice(cr3, gva, &mut buf);
+    u8::from_le_bytes(buf)
+}
+
+fn chunked(start: Address, sz: usize) -> impl Iterator<Item = (Address, usize)> {
+    debug_assert!(start.checked_add(sz as u64).is_some());
+
     let mut remaining = sz;
     let mut base = start;
 
@@ -63,13 +90,63 @@ fn chunk(start: Address, sz: usize) -> impl Iterator<Item = (Address, usize)> {
     })
 }
 
-pub fn virt_read_checked(cr3: Address, gva: Address, buf: &mut Vec<u8>, sz: usize) -> Result<(), VirtMemError> {
-    let gpa = virt_translate_checked(cr3, gva)?;
+pub fn virt_read(cr3: PhyAddress, gva: Address, buf: &mut Vec<u8>, sz: usize) {
+    virt_read_checked(cr3, gva, buf, sz).unwrap()
+}
+
+pub fn virt_read_checked(cr3: PhyAddress, gva: Address, buf: &mut Vec<u8>, sz: usize) -> Result<(), VirtMemError> {
+    debug_assert!(gva.checked_add(sz as u64).is_some());
+
+    let len = buf.len();
+    buf.reserve(sz);
+
+    unsafe {
+        buf.set_len(len + sz);
+
+        // if we errored, roll the length back to the original
+        if virt_read_slice_checked(cr3, gva, &mut buf[len..len+sz]).is_err() {
+            buf.set_len(len);
+        }
+    }
+
     Ok(())
 }
 
+pub fn virt_read_slice(cr3: PhyAddress, gva: Address, buf: &mut [u8]) {
+    virt_read_slice_checked(cr3, gva, buf).unwrap()
+}
+
+pub fn virt_read_slice_checked(cr3: PhyAddress, gva: Address, buf: &mut [u8]) -> Result<(), VirtMemError> {
+    debug_assert!(gva.checked_add(buf.len() as u64).is_some());
+
+    let mut off = 0;
+
+    for (start, sz) in chunked(gva, buf.len()) {
+        let gpa = virt_translate_checked(cr3, start)?;
+        phy_read_slice(gpa, &mut buf[off..off+sz]);
+        off += sz;
+    }
+
+    Ok(())
+}
+
+pub fn virt_write(cr3: PhyAddress, gva: Address, buf: &[u8]) {
+    virt_write_checked(cr3, gva, buf).unwrap()
+}
+
 pub fn virt_write_checked(cr3: PhyAddress, gva: Address, buf: &[u8]) -> Result<(), VirtMemError> {
-    let gpa = virt_translate_checked(cr3, gva)?;
+    debug_assert!(gva.checked_add(buf.len() as u64).is_some());
+
+    let mut off = 0;
+
+    for (start, sz) in chunked(gva, buf.len()) {
+        let gpa = virt_translate_checked(cr3, start)?;
+
+        phy_write(gpa, &buf[off..off+sz]);
+
+        off += sz;
+    }
+
     Ok(())
 }
 
@@ -78,7 +155,7 @@ pub fn virt_translate(cr3: PhyAddress, gva: Address) -> PhyAddress {
 }
 
 pub fn virt_translate_checked(cr3: PhyAddress, gva: Address) -> Result<PhyAddress, VirtMemError> {
-    let pml4_base = cr3 & !0xfff;
+    let (pml4_base, _) = base_flags(cr3);
 
     let pml4e_addr = pml4_base + pml4_index(gva) * 8;
     let pml4e = phy_read_u64(pml4e_addr);

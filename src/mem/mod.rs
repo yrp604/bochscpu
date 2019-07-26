@@ -17,7 +17,7 @@ use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
 
 #[ctor]
-static FAULT: SyncUnsafeCell<Box<FnMut(PhyAddress)>> = {
+static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> = {
     SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set")))
 };
 

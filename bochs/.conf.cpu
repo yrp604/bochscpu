@@ -3,8 +3,8 @@
 # .conf.cpu
 #
 
-CC="clang-8"
-CXX="clang-8"
+CC="clang"
+CXX="clang"
 #CFLAGS="-Wall -g -O3 -fomit-frame-pointer -pipe -fPIC -flto=thin"    # for speed
 CFLAGS="-Wall -g -O3 -fomit-frame-pointer -pipe -fPIC"    # for speed
 #CFLAGS="-Wall -g -pipe -fPIC"        # for development
@@ -28,7 +28,7 @@ export CXXFLAGS
   --enable-pci \
   --enable-instrumentation=../cabi \
   --enable-show-ips \
-  --enable-smp \
+  --disable-smp \
   --enable-configurable-msrs \
   --disable-disasm \
   --with-nogui \

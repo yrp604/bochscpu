@@ -12,7 +12,7 @@ pub fn phy_read_u64(gpa: PhyAddress) -> u64 {
 
 pub fn phy_read_slice(gpa: PhyAddress, buf: &mut [u8]) {
     // make sure we dont span pages
-    debug_assert!(gpa + (buf.len() as PhyAddress) < (gpa & !0xfff) + 0x1000);
+    debug_assert!(gpa + (buf.len() as PhyAddress) <= (gpa & !0xfff) + 0x1000);
 
     let src = unsafe {
         let src_ptr = phy_translate(gpa);
@@ -23,19 +23,19 @@ pub fn phy_read_slice(gpa: PhyAddress, buf: &mut [u8]) {
     &buf.copy_from_slice(src);
 }
 
-pub fn phy_read_page(gpa: PhyAddress, buf: &mut Vec<u8>, sz: usize) {
+pub fn phy_read(gpa: PhyAddress, buf: &mut Vec<u8>, sz: usize) {
     // make sure we dont span pages
-    debug_assert!(gpa + (sz as PhyAddress) < (gpa & !0xfff) + 0x1000);
+    debug_assert!(gpa + (sz as PhyAddress) <= (gpa & !0xfff) + 0x1000);
 
     let len = buf.len();
-    buf.reserve(len + sz);
+    buf.reserve(sz);
     let buf_slice = &mut buf[len..len+sz];
     phy_read_slice(gpa, buf_slice)
 }
 
 pub fn phy_write(gpa: PhyAddress, data: &[u8]) {
     // make sure we dont span pages
-    debug_assert!(gpa + (data.len() as PhyAddress) < (gpa & !0xfff) + 0x1000);
+    debug_assert!(gpa + (data.len() as PhyAddress) <= (gpa & !0xfff) + 0x1000);
 
     let dst = unsafe {
         let dst_ptr = phy_translate(gpa);

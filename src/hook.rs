@@ -143,8 +143,8 @@ impl From<u32> for MemAccess {
 pub trait InitEnvHook = FnMut();
 pub trait ExitEnvHook = FnMut();
 
-static mut INIT_ENV_HOOKS: Vec<Box<InitEnvHook>> = Vec::new();
-static mut EXIT_ENV_HOOKS: Vec<Box<ExitEnvHook>> = Vec::new();
+static mut INIT_ENV_HOOKS: Vec<Box<dyn InitEnvHook>> = Vec::new();
+static mut EXIT_ENV_HOOKS: Vec<Box<dyn ExitEnvHook>> = Vec::new();
 
 pub trait InitializeHook = FnMut(u32);
 pub trait ExitHook = FnMut(u32);
@@ -152,69 +152,69 @@ pub trait ResetHook = FnMut(u32, u32);
 pub trait HltHook = FnMut(u32);
 pub trait MwaitHook = FnMut(u32, PhyAddress, u32, u32);
 
-static mut INITIALIZE_HOOKS: Vec<Box<InitializeHook>> = Vec::new();
-static mut EXIT_HOOKS: Vec<Box<ExitHook>> = Vec::new();
-static mut RESET_HOOKS: Vec<Box<ResetHook>> = Vec::new();
-static mut HLT_HOOKS: Vec<Box<HltHook>> = Vec::new();
-static mut MWAIT_HOOKS: Vec<Box<MwaitHook>> = Vec::new();
+static mut INITIALIZE_HOOKS: Vec<Box<dyn InitializeHook>> = Vec::new();
+static mut EXIT_HOOKS: Vec<Box<dyn ExitHook>> = Vec::new();
+static mut RESET_HOOKS: Vec<Box<dyn ResetHook>> = Vec::new();
+static mut HLT_HOOKS: Vec<Box<dyn HltHook>> = Vec::new();
+static mut MWAIT_HOOKS: Vec<Box<dyn MwaitHook>> = Vec::new();
 
 pub trait CnearBranchTakenHook = FnMut(u32, Address, Address);
 pub trait CnearBranchNotTakenHook = FnMut(u32, Address);
 pub trait UcnearBranchHook = FnMut(u32, u32, Address, Address);
 pub trait FarBranchHook = FnMut(u32, Branch, (u16, Address), (u16, Address));
 
-static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<CnearBranchTakenHook>> = Vec::new();
-static mut CNEAR_BRANCH_NOT_TAKEN_HOOKS: Vec<Box<CnearBranchNotTakenHook>> = Vec::new();
-static mut UCNEAR_BRANCH_HOOKS: Vec<Box<UcnearBranchHook>> = Vec::new();
-static mut FAR_BRANCH_HOOKS: Vec<Box<FarBranchHook>> = Vec::new();
+static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<dyn CnearBranchTakenHook>> = Vec::new();
+static mut CNEAR_BRANCH_NOT_TAKEN_HOOKS: Vec<Box<dyn CnearBranchNotTakenHook>> = Vec::new();
+static mut UCNEAR_BRANCH_HOOKS: Vec<Box<dyn UcnearBranchHook>> = Vec::new();
+static mut FAR_BRANCH_HOOKS: Vec<Box<dyn FarBranchHook>> = Vec::new();
 
 pub trait OpcodeHook = FnMut(u32, *mut c_void, &[u8], bool, bool);
 pub trait InterruptHook = FnMut(u32, u32);
 pub trait ExceptionHook = FnMut(u32, u32, u32);
 pub trait HwInterruptHook = FnMut(u32, u32, (u16, Address));
 
-static mut OPCODE_HOOKS: Vec<Box<OpcodeHook>> = Vec::new();
-static mut INTERRUPT_HOOKS: Vec<Box<InterruptHook>> = Vec::new();
-static mut EXCEPTION_HOOKS: Vec<Box<ExceptionHook>> = Vec::new();
-static mut HW_INTERRUPT_HOOKS: Vec<Box<HwInterruptHook>> = Vec::new();
+static mut OPCODE_HOOKS: Vec<Box<dyn OpcodeHook>> = Vec::new();
+static mut INTERRUPT_HOOKS: Vec<Box<dyn InterruptHook>> = Vec::new();
+static mut EXCEPTION_HOOKS: Vec<Box<dyn ExceptionHook>> = Vec::new();
+static mut HW_INTERRUPT_HOOKS: Vec<Box<dyn HwInterruptHook>> = Vec::new();
 
 pub trait TlbCntrlHook = FnMut(u32, TlbCntrl, Option<PhyAddress>);
 pub trait CacheCntrlHook = FnMut(u32, CacheCntrl);
 pub trait PrefetchHintHook = FnMut(u32, PrefetchHint, u32, Address);
 pub trait ClflushHook = FnMut(u32, Address, PhyAddress);
 
-static mut TLB_CNTRL_HOOKS: Vec<Box<TlbCntrlHook>> = Vec::new();
-static mut CACHE_CNTRL_HOOKS: Vec<Box<CacheCntrlHook>> = Vec::new();
-static mut PREFETCH_HINT_HOOKS: Vec<Box<PrefetchHintHook>> = Vec::new();
-static mut CLFLUSH_HOOKS: Vec<Box<ClflushHook>> = Vec::new();
+static mut TLB_CNTRL_HOOKS: Vec<Box<dyn TlbCntrlHook>> = Vec::new();
+static mut CACHE_CNTRL_HOOKS: Vec<Box<dyn CacheCntrlHook>> = Vec::new();
+static mut PREFETCH_HINT_HOOKS: Vec<Box<dyn PrefetchHintHook>> = Vec::new();
+static mut CLFLUSH_HOOKS: Vec<Box<dyn ClflushHook>> = Vec::new();
 
 pub trait BeforeExecutionHook = FnMut(u32, *mut c_void);
 pub trait AfterExecutionHook = FnMut(u32, *mut c_void);
 pub trait RepeatIterationHook = FnMut(u32, *mut c_void);
 
-static mut BEFORE_EXECUTION_HOOKS: Vec<Box<BeforeExecutionHook>> = Vec::new();
-static mut AFTER_EXECUTION_HOOKS: Vec<Box<AfterExecutionHook>> = Vec::new();
-static mut REPEAT_ITERATION_HOOKS: Vec<Box<RepeatIterationHook>> = Vec::new();
+static mut BEFORE_EXECUTION_HOOKS: Vec<Box<dyn BeforeExecutionHook>> = Vec::new();
+static mut AFTER_EXECUTION_HOOKS: Vec<Box<dyn AfterExecutionHook>> = Vec::new();
+static mut REPEAT_ITERATION_HOOKS: Vec<Box<dyn RepeatIterationHook>> = Vec::new();
 
 pub trait InpHook = FnMut(u16, usize);
 pub trait Inp2Hook = FnMut(u16, usize, u32);
 pub trait OutpHook = FnMut(u16, usize, u32);
 
-static mut INP_HOOKS: Vec<Box<InpHook>> = Vec::new();
-static mut INP2_HOOKS: Vec<Box<Inp2Hook>> = Vec::new();
-static mut OUTP_HOOKS: Vec<Box<OutpHook>> = Vec::new();
+static mut INP_HOOKS: Vec<Box<dyn InpHook>> = Vec::new();
+static mut INP2_HOOKS: Vec<Box<dyn Inp2Hook>> = Vec::new();
+static mut OUTP_HOOKS: Vec<Box<dyn OutpHook>> = Vec::new();
 
 pub trait LinAccessHook = FnMut(u32, Address, Address, usize, u32, MemAccess);
 pub trait PhyAccessHook = FnMut(u32, Address, usize, u32, MemAccess);
 
-static mut LIN_ACCESS_HOOKS: Vec<Box<LinAccessHook>> = Vec::new();
-static mut PHY_ACCESS_HOOKS: Vec<Box<PhyAccessHook>> = Vec::new();
+static mut LIN_ACCESS_HOOKS: Vec<Box<dyn LinAccessHook>> = Vec::new();
+static mut PHY_ACCESS_HOOKS: Vec<Box<dyn PhyAccessHook>> = Vec::new();
 
 pub trait WrmsrHook = FnMut(u32, u32, u64);
-static mut WRMSR_HOOKS:  Vec<Box<WrmsrHook>> = Vec::new();
+static mut WRMSR_HOOKS:  Vec<Box<dyn WrmsrHook>> = Vec::new();
 
 pub trait VmexitHook = FnMut(u32, u32, u64);
-static mut VMEXIT_HOOKS: Vec<Box<VmexitHook>> = Vec::new();
+static mut VMEXIT_HOOKS: Vec<Box<dyn VmexitHook>> = Vec::new();
 
 //
 
