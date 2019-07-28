@@ -3,7 +3,7 @@
 ## install
 
 ```sh
-$ git checkout git@github.com:pquux/bochscpu.git
+$ git checkout git@github.com:yrp604/bochscpu.git
 $ cd bochscpu
 $ svn co http://svn.code.sf.net/p/bochs/code/trunk/bochs bochs
 $ cd bochs
