@@ -70,13 +70,17 @@ extern "C" fn mem_write_phy(gpa: PhyAddress, sz: u32, src: *const u8) {
 }
 
 pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8{
-    if let Some(hva) = resolve_hva_checked(gpa) {
+    // i think this is needed because bochs will call into this with high bits
+    // set?
+    let real_gpa = gpa & 0x000f_ffff_ffff_ffff;
+
+    if let Some(hva) = resolve_hva_checked(real_gpa) {
         return hva;
     }
 
-    fault(gpa);
+    fault(real_gpa);
 
-    resolve_hva(gpa)
+    resolve_hva(real_gpa)
 }
 
 pub unsafe fn missing_page<T: FnMut(PhyAddress) + 'static>(f: T) {
