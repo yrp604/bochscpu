@@ -10,9 +10,9 @@
 - [x] Write windbg-js to dump register state
 - [ ] Figure out patching bochs in a not-shit way
       * [ ] Fix rdrand via patching method with rip ^ branch ctr
-- [ ] Write breakpoints on top of hooks
+- [x] Write breakpoints on top of hooks
 - [ ] Figure out how symbols are going to work
 - [x] Deal with MMU issues where using emulated VirtualAlloc'd pages causes
       crashes due to the new pages not being present in the dump
 - [x] Fix re-entering CPU loop
-- [ ] Implement virt read/write
+- [x] Implement virt read/write

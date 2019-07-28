@@ -10,7 +10,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [dependencies]
 ctor = "0.1"
 fnv = "1"
-hashbrown = "0.2"
+hashbrown = "0.5"
 lazy_static = "1"
 log = { version = "0.4", features = ["release_max_level_off"] }
 unreachable = "1"
