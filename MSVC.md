@@ -1,5 +1,7 @@
 # msvc install
 
+## build bochs
+
 ```sh
 $ git checkout git@github.com:yrp604/bochscpu.git
 $ cd bochscpu
@@ -14,17 +16,13 @@ $ source .conf.cpu-msvc
 ```
 
 ```sh
-$ nmake # this command should fail with an error about bochs.h
-$ cd cpu/fpu
-$ nmake
-$ rename libfpu.a fpu.lib
+$ build.bat
+$ fixup-lib-names.bat
 $ cd ..
-$ rename libcpu.a cpu.lib
-$ cd avx
-$ rename libavx.a avx.lib
-$ cd ../cpudb
-$ rename libcpudb.a cpudb.lib
-$ cd ../../
-$ move build-msvc.rs build.rs
+```
+
+## build bindings
+Once bochs is built
+```
 $ cargo build
 ```

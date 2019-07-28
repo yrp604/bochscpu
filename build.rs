@@ -8,7 +8,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/cpu-cabi.cc")
@@ -17,7 +17,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/mem-cabi.cc")
@@ -27,9 +27,9 @@ fn main() {
     match env::var("PROFILE").unwrap().as_ref() {
         "release" => {
             cc::Build::new()
-                .define("RUST_CC_RELEASE", Some(""))
+                .define("RUST_CC_RELEASE", None)
                 .cpp(true)
-                .flag("-Wno-unused-parameter")
+                .flag_if_supported("-Wno-unused-parameter")
                 .include(Path::new("bochs"))
                 .include(Path::new("cabi"))
                 .file("cabi/logfunctions-cabi.cc")
@@ -38,7 +38,7 @@ fn main() {
         _ => {
             cc::Build::new()
                 .cpp(true)
-                .flag("-Wno-unused-parameter")
+                .flag_if_supported("-Wno-unused-parameter")
                 .include(Path::new("bochs"))
                 .include(Path::new("cabi"))
                 .file("cabi/logfunctions-cabi.cc")
@@ -49,7 +49,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/siminterface-cabi.cc")
@@ -58,7 +58,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("bochs/gui"))
         .include(Path::new("cabi"))
@@ -68,7 +68,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/devices-cabi.cc")
@@ -77,7 +77,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/dbg.cc")
@@ -86,7 +86,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/gui.cc")
@@ -95,7 +95,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/system-cabi.cc")
@@ -104,7 +104,7 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .flag("-Wno-unused-parameter")
+        .flag_if_supported("-Wno-unused-parameter")
         .include(Path::new("bochs"))
         .include(Path::new("cabi"))
         .file("cabi/apic.cc")
