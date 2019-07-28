@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# .conf.cpu-msvc
+#
+
+set echo
+
+# NOTE: repeat-speedups breaks linear access hooks
+# NOTE: we might want configurable-msrs
+./configure \
+  --target=x86_64-pc-windows \
+  --disable-repeat-speedups \
+  --enable-fast-function-calls \
+  --enable-handlers-chaining \
+  --enable-cpu-level=6 \
+  --enable-x86-64 \
+  --enable-avx \
+  --enable-vmx=2 \
+  --enable-pci \
+  --enable-instrumentation=../cabi \
+  --enable-show-ips \
+  --disable-smp \
+  --enable-configurable-msrs \
+  --disable-disasm \
+  --with-win32 --with-nogui \
+  ${CONFIGURE_ARGS}
+
+unset echo
+
+# Fix up all makefiles so that nmake can handle them.
+for i in `find . -name Makefile`; do
+  echo Removing curly brackets in $i for NMAKE.
+  mv $i $i.tmp
+  sed -e 's/{/(/g' -e 's/}/)/g' < $i.tmp > $i
+  rm -f $i.tmp
+done
