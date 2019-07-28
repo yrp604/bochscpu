@@ -1,17 +1,38 @@
 # bochscpu
 
-## install
+## install linux
 
 ```sh
 $ git checkout git@github.com:yrp604/bochscpu.git
 $ cd bochscpu
-$ svn co http://svn.code.sf.net/p/bochs/code/trunk/bochs bochs
+$ svn co http://svn.code.sf.net/p/bochs/code/trunk/bochs bochs # last known good: r13566
 $ cd bochs
-$ svn -r13555 up # check out the second to last revision that actually builds
 $ source .conf.cpu
 $ make # this command should fail with an error about libinstrument.a
 $ cd ..
 $ cargo build
+```
+
+## install windows
+
+In WSL/Cygwin/Linux VM
+
+```sh
+$ git checkout git@github.com:yrp604/bochscpu.git
+$ cd bochscpu
+$ svn co http://svn.code.sf.net/p/bochs/code/trunk/bochs bochs # last known good: r13566
+$ cd bochs
+$ source .conf.cpu-msvc
+```
+
+In VS Cmd Prompt in bochcpu
+
+```
+> cd bochs
+> build.bat
+> fixup-lib-names.bat
+> cd ..
+> cargo build
 ```
 
 ## usage
