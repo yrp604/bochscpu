@@ -10,6 +10,7 @@ int bx_pc_system_c::register_timer(void *this_ptr, bx_timer_handler_t,
     Bit32u useconds, bx_bool continuous, bx_bool active, const char *id)
 {
     assert(false);
+    return 0;
 }
 
 int bx_pc_system_c::register_timer_ticks(void* this_ptr,
@@ -27,9 +28,9 @@ void bx_pc_system_c::activate_timer_ticks(unsigned int index,
 
 void bx_pc_system_c::deactivate_timer(unsigned int timer_index) { assert(false); }
 
-int bx_pc_system_c::Reset(unsigned int) { assert(false); }
+int bx_pc_system_c::Reset(unsigned int) { assert(false); return 0; }
 
-bx_bool bx_pc_system_c::get_enable_a20(void) { assert(false); }
+bx_bool bx_pc_system_c::get_enable_a20(void) { assert(false); return true; }
 
 void bx_pc_system_c::countdownEvent(void)
 {
