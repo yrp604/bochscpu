@@ -1,7 +1,7 @@
 use std::slice;
 
-use crate::PhyAddress;
 use crate::syncunsafecell::SyncUnsafeCell;
+use crate::PhyAddress;
 
 mod phy;
 pub use phy::*;
@@ -15,11 +15,9 @@ mod fastmap64_mem;
 pub use fastmap64_mem::{add_page, del_page};
 use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
-
 #[ctor]
-static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> = {
-    SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set")))
-};
+static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> =
+    { SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set"))) };
 
 const fn page_off(a: PhyAddress) -> (PhyAddress, usize) {
     (a & !0xfff, a as usize & 0xfff)
@@ -69,7 +67,7 @@ extern "C" fn mem_write_phy(gpa: PhyAddress, sz: u32, src: *const u8) {
     }
 }
 
-pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8{
+pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8 {
     // i think this is needed because bochs will call into this with high bits
     // set?
     let real_gpa = gpa & 0x000f_ffff_ffff_ffff;

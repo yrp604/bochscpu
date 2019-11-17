@@ -20,7 +20,8 @@ extern "C" {
 pub struct ParamEnum(pub *mut c_void, Vec<*const c_char>);
 impl ParamEnum {
     pub fn new(name: &'static CStr, val: &[&'static CStr], idx: usize) -> Self {
-        let mut a : Vec<*const c_char> = val.iter().map(|x| x as *const _ as *const c_char).collect();
+        let mut a: Vec<*const c_char> =
+            val.iter().map(|x| x as *const _ as *const c_char).collect();
         assert!(idx < a.len());
         a.push(ptr::null());
 
@@ -73,7 +74,7 @@ impl ParamString {
             sim_new_param_string(
                 name.as_ptr(),
                 val.as_ptr(),
-                val.to_bytes_with_nul().len() as _
+                val.to_bytes_with_nul().len() as _,
             )
         };
 

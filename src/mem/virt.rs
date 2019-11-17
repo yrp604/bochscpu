@@ -1,8 +1,8 @@
 use std::iter;
 use std::mem;
 
+use crate::mem::{phy_read_slice, phy_read_u64, phy_write};
 use crate::{Address, PhyAddress};
-use crate::mem::{phy_read_u64, phy_read_slice, phy_write};
 
 const fn pml4_index(gva: Address) -> u64 {
     gva >> (12 + (9 * 3)) & 0x1ff
@@ -94,7 +94,12 @@ pub fn virt_read(cr3: PhyAddress, gva: Address, buf: &mut Vec<u8>, sz: usize) {
     virt_read_checked(cr3, gva, buf, sz).unwrap()
 }
 
-pub fn virt_read_checked(cr3: PhyAddress, gva: Address, buf: &mut Vec<u8>, sz: usize) -> Result<(), VirtMemError> {
+pub fn virt_read_checked(
+    cr3: PhyAddress,
+    gva: Address,
+    buf: &mut Vec<u8>,
+    sz: usize,
+) -> Result<(), VirtMemError> {
     debug_assert!(gva.checked_add(sz as u64).is_some());
 
     let len = buf.len();
@@ -104,7 +109,7 @@ pub fn virt_read_checked(cr3: PhyAddress, gva: Address, buf: &mut Vec<u8>, sz: u
         buf.set_len(len + sz);
 
         // if we errored, roll the length back to the original
-        if virt_read_slice_checked(cr3, gva, &mut buf[len..len+sz]).is_err() {
+        if virt_read_slice_checked(cr3, gva, &mut buf[len..len + sz]).is_err() {
             buf.set_len(len);
         }
     }
@@ -116,14 +121,18 @@ pub fn virt_read_slice(cr3: PhyAddress, gva: Address, buf: &mut [u8]) {
     virt_read_slice_checked(cr3, gva, buf).unwrap()
 }
 
-pub fn virt_read_slice_checked(cr3: PhyAddress, gva: Address, buf: &mut [u8]) -> Result<(), VirtMemError> {
+pub fn virt_read_slice_checked(
+    cr3: PhyAddress,
+    gva: Address,
+    buf: &mut [u8],
+) -> Result<(), VirtMemError> {
     debug_assert!(gva.checked_add(buf.len() as u64).is_some());
 
     let mut off = 0;
 
     for (start, sz) in chunked(gva, buf.len()) {
         let gpa = virt_translate_checked(cr3, start)?;
-        phy_read_slice(gpa, &mut buf[off..off+sz]);
+        phy_read_slice(gpa, &mut buf[off..off + sz]);
         off += sz;
     }
 
@@ -142,7 +151,7 @@ pub fn virt_write_checked(cr3: PhyAddress, gva: Address, buf: &[u8]) -> Result<(
     for (start, sz) in chunked(gva, buf.len()) {
         let gpa = virt_translate_checked(cr3, start)?;
 
-        phy_write(gpa, &buf[off..off+sz]);
+        phy_write(gpa, &buf[off..off + sz]);
 
         off += sz;
     }

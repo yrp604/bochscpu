@@ -1,5 +1,5 @@
-use crate::{Address, PhyAddress, NUM_CPUS};
 use crate::syncunsafecell::SyncUnsafeCell;
+use crate::{Address, PhyAddress, NUM_CPUS};
 
 mod state;
 pub use state::State;
@@ -51,14 +51,7 @@ extern "C" {
         limit: *mut u32,
         attr: *mut u16,
     );
-    fn cpu_set_ldtr(
-        id: u32,
-        present: u32,
-        selector: u16,
-        base: Address,
-        limit: u32,
-        attr: u16,
-    );
+    fn cpu_set_ldtr(id: u32, present: u32, selector: u16, base: Address, limit: u32, attr: u16);
     fn cpu_get_tr(
         id: u32,
         present: *mut u32,
@@ -67,14 +60,7 @@ extern "C" {
         limit: *mut u32,
         attr: *mut u16,
     );
-    fn cpu_set_tr(
-        id: u32,
-        present: u32,
-        selector: u16,
-        base: Address,
-        limit: u32,
-        attr: u16,
-    );
+    fn cpu_set_tr(id: u32, present: u32, selector: u16, base: Address, limit: u32, attr: u16);
     fn cpu_get_gdtr(id: u32, base: *mut Address, limit: *mut u16);
     fn cpu_set_gdtr(id: u32, base: Address, limit: u16);
     fn cpu_get_idtr(id: u32, base: *mut Address, limit: *mut u16);
@@ -130,9 +116,9 @@ extern "C" {
     fn cpu_get_zmm(id: u32, reg: u32, val: *mut u64);
     fn cpu_set_zmm(id: u32, reg: u32, val: *const u64);
     fn cpu_get_mxcsr(id: u32) -> u32;
-    fn cpu_set_mxcsr(id:u32, val: u32);
+    fn cpu_set_mxcsr(id: u32, val: u32);
     fn cpu_get_mxcsr_mask(id: u32) -> u32;
-    fn cpu_set_mxcsr_mask(id:u32, val: u32);
+    fn cpu_set_mxcsr_mask(id: u32, val: u32);
 
     fn cpu_get_fp_cw(id: u32) -> u16;
     fn cpu_set_fp_cw(id: u32, val: u16);
@@ -176,7 +162,7 @@ enum SegRegs {
     Ss = 2,
     Ds = 3,
     Fs = 4,
-    Gs = 5
+    Gs = 5,
 }
 
 enum DRegs {
@@ -189,7 +175,7 @@ enum DRegs {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
 pub struct Zmm {
-    pub q: [u64; 8]
+    pub q: [u64; 8],
 }
 
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
@@ -228,9 +214,8 @@ pub enum RunState {
 // concurrently, bochs serializes cpu execution even with multiple cpus, so
 // this should be ok. I hope.
 #[ctor]
-pub static CPU_RUN_STATES: SyncUnsafeCell<Vec<RunState>> = {
-    SyncUnsafeCell::new(vec![RunState::Stop(StopReason::None); NUM_CPUS])
-};
+pub static CPU_RUN_STATES: SyncUnsafeCell<Vec<RunState>> =
+    { SyncUnsafeCell::new(vec![RunState::Stop(StopReason::None); NUM_CPUS]) };
 
 unsafe fn cpu_run_states() -> &'static mut Vec<RunState> {
     &mut (*(CPU_RUN_STATES.0.get()))
@@ -245,7 +230,7 @@ pub unsafe fn set_run_state(id: u32, rs: RunState) {
 }
 
 pub struct Cpu {
-    handle: u32
+    handle: u32,
 }
 
 impl Cpu {
@@ -315,14 +300,38 @@ impl Cpu {
     // r11=00000202e01e42a0 r12=0000000000000000 r13=0000000000000000
     // r14=0000000000000000 r15=0000000000000000
     pub unsafe fn print_gprs(&self) {
-        println!("rax={:016x} rbx={:016x} rcx={:016x}", self.rax(), self.rbx(), self.rcx());
-        println!("rdx={:016x} rsi={:016x} rdi={:016x}", self.rdx(), self.rsi(), self.rdi());
-        println!("rip={:016x} rsp={:016x} rbp={:016x}", self.rip(), self.rsp(), self.rbp());
-        println!(" r8={:016x}  r9={:016x} r10={:016x}", self.r8(), self.r9(), self.r10());
-        println!("r11={:016x} r12={:016x} r13={:016x}", self.r11(), self.r12(), self.r13());
+        println!(
+            "rax={:016x} rbx={:016x} rcx={:016x}",
+            self.rax(),
+            self.rbx(),
+            self.rcx()
+        );
+        println!(
+            "rdx={:016x} rsi={:016x} rdi={:016x}",
+            self.rdx(),
+            self.rsi(),
+            self.rdi()
+        );
+        println!(
+            "rip={:016x} rsp={:016x} rbp={:016x}",
+            self.rip(),
+            self.rsp(),
+            self.rbp()
+        );
+        println!(
+            " r8={:016x}  r9={:016x} r10={:016x}",
+            self.r8(),
+            self.r9(),
+            self.r10()
+        );
+        println!(
+            "r11={:016x} r12={:016x} r13={:016x}",
+            self.r11(),
+            self.r12(),
+            self.r13()
+        );
         println!("r14={:016x} r15={:016x}", self.r14(), self.r15());
     }
-
 
     pub unsafe fn state(&self) -> State {
         State {
@@ -688,7 +697,13 @@ impl Cpu {
             &mut attr,
         );
 
-        Seg { present: present != 0, selector, base, limit, attr }
+        Seg {
+            present: present != 0,
+            selector,
+            base,
+            limit,
+            attr,
+        }
     }
 
     unsafe fn set_seg(&self, s: SegRegs, v: Seg) {
@@ -699,7 +714,7 @@ impl Cpu {
             v.selector,
             v.base,
             v.limit,
-            v.attr
+            v.attr,
         )
     }
 
@@ -767,7 +782,13 @@ impl Cpu {
             &mut attr,
         );
 
-        Seg { present: present != 0, selector, base, limit, attr }
+        Seg {
+            present: present != 0,
+            selector,
+            base,
+            limit,
+            attr,
+        }
     }
 
     pub unsafe fn set_ldtr(&self, v: Seg) {
@@ -777,7 +798,7 @@ impl Cpu {
             v.selector,
             v.base,
             v.limit,
-            v.attr
+            v.attr,
         )
     }
 
@@ -797,7 +818,13 @@ impl Cpu {
             &mut attr,
         );
 
-        Seg { present: present != 0, selector, base, limit, attr }
+        Seg {
+            present: present != 0,
+            selector,
+            base,
+            limit,
+            attr,
+        }
     }
 
     pub unsafe fn set_tr(&self, v: Seg) {
@@ -807,7 +834,7 @@ impl Cpu {
             v.selector,
             v.base,
             v.limit,
-            v.attr
+            v.attr,
         )
     }
 
@@ -1076,7 +1103,6 @@ impl Cpu {
         cpu_set_mxcsr_mask(self.handle, v)
     }
 
-
     // FP
 
     pub unsafe fn fp_cw(&self) -> u16 {
@@ -1110,7 +1136,6 @@ impl Cpu {
     pub unsafe fn set_fp_op(&self, v: u16) {
         cpu_set_fp_op(self.handle, v)
     }
-
 
     pub unsafe fn fp_st(&self, idx: usize) -> u64 {
         assert!(idx < 8);

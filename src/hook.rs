@@ -19,7 +19,6 @@ use crate::{Address, PhyAddress};
 //     unsafe { INIT_ENV_HOOKS.get().iter_mut().for_each(|x| x()) }
 // }
 
-
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Branch {
     Jmp = 10,
@@ -79,7 +78,7 @@ impl From<u32> for TlbCntrl {
             16 => TlbCntrl::InvEpt,
             17 => TlbCntrl::InvVpid,
             18 => TlbCntrl::InvPcid,
-            _ => unsafe { unreachable() }
+            _ => unsafe { unreachable() },
         }
     }
 }
@@ -211,7 +210,7 @@ static mut LIN_ACCESS_HOOKS: Vec<Box<dyn LinAccessHook>> = Vec::new();
 static mut PHY_ACCESS_HOOKS: Vec<Box<dyn PhyAccessHook>> = Vec::new();
 
 pub trait WrmsrHook = FnMut(u32, u32, u64);
-static mut WRMSR_HOOKS:  Vec<Box<dyn WrmsrHook>> = Vec::new();
+static mut WRMSR_HOOKS: Vec<Box<dyn WrmsrHook>> = Vec::new();
 
 pub trait VmexitHook = FnMut(u32, u32, u64);
 static mut VMEXIT_HOOKS: Vec<Box<dyn VmexitHook>> = Vec::new();
@@ -263,7 +262,6 @@ extern "C" fn bx_instr_exit(cpu: u32) {
 #[no_mangle]
 extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
     unsafe { RESET_HOOKS.iter_mut().for_each(|x| x(cpu, ty)) }
-
 }
 #[no_mangle]
 extern "C" fn bx_instr_hlt(cpu: u32) {
@@ -271,7 +269,11 @@ extern "C" fn bx_instr_hlt(cpu: u32) {
 }
 #[no_mangle]
 extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
-    unsafe { MWAIT_HOOKS.iter_mut().for_each(|x| x(cpu, addr, len, flags)) }
+    unsafe {
+        MWAIT_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, addr, len, flags))
+    }
 }
 
 //
@@ -291,15 +293,27 @@ pub unsafe fn far_branch<T: FarBranchHook + 'static>(h: T) {
 
 #[no_mangle]
 extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, new_eip: Address) {
-    unsafe { CNEAR_BRANCH_TAKEN_HOOKS.iter_mut().for_each(|x| x(cpu, branch_eip, new_eip)) }
+    unsafe {
+        CNEAR_BRANCH_TAKEN_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, branch_eip, new_eip))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_cnear_branch_not_taken(cpu: u32, branch_eip: Address) {
-    unsafe { CNEAR_BRANCH_NOT_TAKEN_HOOKS.iter_mut().for_each(|x| x(cpu, branch_eip)) }
+    unsafe {
+        CNEAR_BRANCH_NOT_TAKEN_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, branch_eip))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_ucnear_branch(cpu: u32, what: u32, branch_eip: Address, new_eip: Address) {
-    unsafe { UCNEAR_BRANCH_HOOKS.iter_mut().for_each(|x| x(cpu, what, branch_eip, new_eip)) }
+    unsafe {
+        UCNEAR_BRANCH_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, what, branch_eip, new_eip))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_far_branch(
@@ -308,12 +322,12 @@ extern "C" fn bx_instr_far_branch(
     prev_cs: u16,
     prev_eip: Address,
     new_cs: u16,
-    new_eip: Address)
-{
+    new_eip: Address,
+) {
     unsafe {
-        FAR_BRANCH_HOOKS.iter_mut().for_each(
-            |x| x(cpu, what.into(), (prev_cs, prev_eip), (new_cs, new_eip))
-        )
+        FAR_BRANCH_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, what.into(), (prev_cs, prev_eip), (new_cs, new_eip)))
     }
 }
 
@@ -332,17 +346,24 @@ pub unsafe fn hw_interrupt<T: HwInterruptHook + 'static>(h: T) {
     HW_INTERRUPT_HOOKS.push(Box::new(h))
 }
 #[no_mangle]
-extern "C" fn bx_instr_opcode(cpu: u32, i: *mut c_void, opcode: *const u8, len: u32, is32: u32, is64: u32) {
+extern "C" fn bx_instr_opcode(
+    cpu: u32,
+    i: *mut c_void,
+    opcode: *const u8,
+    len: u32,
+    is32: u32,
+    is64: u32,
+) {
     unsafe {
-        OPCODE_HOOKS.iter_mut().for_each(
-            |x| x(
+        OPCODE_HOOKS.iter_mut().for_each(|x| {
+            x(
                 cpu,
                 i as *mut _ as *mut c_void,
                 slice::from_raw_parts(opcode, len as usize),
                 is32 != 0,
-                is64 != 0
+                is64 != 0,
             )
-        )
+        })
     }
 }
 #[no_mangle]
@@ -352,16 +373,24 @@ extern "C" fn bx_instr_interrupt(cpu: u32, vector: u32) {
 
 #[no_mangle]
 extern "C" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) {
-    unsafe { EXCEPTION_HOOKS.iter_mut().for_each(|x| x(cpu, vector, error_code)) }
+    unsafe {
+        EXCEPTION_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, vector, error_code))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: Address) {
-    unsafe { HW_INTERRUPT_HOOKS.iter_mut().for_each(|x| x(cpu, vector, (cs, eip))) }
+    unsafe {
+        HW_INTERRUPT_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, vector, (cs, eip)))
+    }
 }
 
 //
 
-pub unsafe fn tlb_cntrl<T:TlbCntrlHook + 'static>(h: T) {
+pub unsafe fn tlb_cntrl<T: TlbCntrlHook + 'static>(h: T) {
     TLB_CNTRL_HOOKS.push(Box::new(h))
 }
 pub unsafe fn cache_cntrl<T: CacheCntrlHook + 'static>(h: T) {
@@ -384,15 +413,27 @@ extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
         _ => None,
     };
 
-    unsafe { TLB_CNTRL_HOOKS.iter_mut().for_each(|x| x(cpu, ty, maybe_cr3)) }
+    unsafe {
+        TLB_CNTRL_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, ty, maybe_cr3))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
-    unsafe { CACHE_CNTRL_HOOKS.iter_mut().for_each(|x| x(cpu, what.into())) }
+    unsafe {
+        CACHE_CNTRL_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, what.into()))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offset: Address) {
-    unsafe { PREFETCH_HINT_HOOKS.iter_mut().for_each(|x| x(cpu, what.into(), seg, offset)) }
+    unsafe {
+        PREFETCH_HINT_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, what.into(), seg, offset))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
@@ -444,11 +485,19 @@ extern "C" fn bx_instr_inp(addr: u16, len: u32) {
 }
 #[no_mangle]
 extern "C" fn bx_instr_inp2(addr: u16, len: u32, val: u32) {
-    unsafe { INP2_HOOKS.iter_mut().for_each(|x| x(addr, len as usize, val)) }
+    unsafe {
+        INP2_HOOKS
+            .iter_mut()
+            .for_each(|x| x(addr, len as usize, val))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
-    unsafe { OUTP_HOOKS.iter_mut().for_each(|x| x(addr, len as usize, val)) }
+    unsafe {
+        OUTP_HOOKS
+            .iter_mut()
+            .for_each(|x| x(addr, len as usize, val))
+    }
 }
 
 //
@@ -460,12 +509,27 @@ pub unsafe fn phy_access<T: PhyAccessHook + 'static>(h: T) {
     PHY_ACCESS_HOOKS.push(Box::new(h))
 }
 #[no_mangle]
-extern "C" fn bx_instr_lin_access(cpu: u32, lin: Address, phy: Address, len: u32, memtype: u32, rw: u32) {
-    unsafe { LIN_ACCESS_HOOKS.iter_mut().for_each(|x| x(cpu, lin, phy, len as usize, memtype, rw.into())) }
+extern "C" fn bx_instr_lin_access(
+    cpu: u32,
+    lin: Address,
+    phy: Address,
+    len: u32,
+    memtype: u32,
+    rw: u32,
+) {
+    unsafe {
+        LIN_ACCESS_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, lin, phy, len as usize, memtype, rw.into()))
+    }
 }
 #[no_mangle]
 extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memtype: u32, rw: u32) {
-    unsafe { PHY_ACCESS_HOOKS.iter_mut().for_each(|x| x(cpu, phy, len as usize, memtype, rw.into())) }
+    unsafe {
+        PHY_ACCESS_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, phy, len as usize, memtype, rw.into()))
+    }
 }
 
 //
@@ -485,6 +549,9 @@ pub unsafe fn vmexit<T: VmexitHook + 'static>(h: T) {
 }
 #[no_mangle]
 extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
-    unsafe { VMEXIT_HOOKS.iter_mut().for_each(|x| x(cpu, reason, qualification)) }
+    unsafe {
+        VMEXIT_HOOKS
+            .iter_mut()
+            .for_each(|x| x(cpu, reason, qualification))
+    }
 }
-

@@ -3,14 +3,14 @@ use std::ffi::{c_void, CStr};
 use std::os::raw::c_char;
 use std::ptr;
 
-use crate::NUM_CPUS;
 use crate::params::*;
+use crate::NUM_CPUS;
 
-macro_rules! cstr { ($s:literal) => {
-    unsafe {
-        CStr::from_bytes_with_nul_unchecked(concat!($s, "\0").as_bytes())
-    }
-}}
+macro_rules! cstr {
+    ($s:literal) => {
+        unsafe { CStr::from_bytes_with_nul_unchecked(concat!($s, "\0").as_bytes()) }
+    };
+}
 
 lazy_static! {
     static ref PARAMS_ENUM: BTreeMap<&'static str, ParamEnum> = {
@@ -176,7 +176,7 @@ extern "C" fn sim_get_param_enum(p: *const c_char) -> *mut c_void {
         None => {
             warn!("no enum parameter: {}", s);
             ptr::null_mut::<c_void>()
-        },
+        }
         Some(v) => v.0,
     }
 }
@@ -195,7 +195,7 @@ extern "C" fn sim_get_param_num(p: *const c_char) -> *mut c_void {
         None => {
             warn!("no num parameter: {}", s);
             ptr::null_mut::<c_void>()
-        },
+        }
         Some(v) => v.0,
     }
 }
@@ -214,7 +214,7 @@ extern "C" fn sim_get_param_bool(p: *const c_char) -> *mut c_void {
         None => {
             warn!("no bool parameter: {}", s);
             ptr::null_mut::<c_void>()
-        },
+        }
         Some(v) => v.0,
     }
 }
@@ -233,7 +233,7 @@ extern "C" fn sim_get_param_string(p: *const c_char) -> *mut c_void {
         None => {
             warn!("no string parameter: {}", s);
             ptr::null_mut::<c_void>()
-        },
+        }
         Some(v) => v.0,
     }
 }

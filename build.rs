@@ -6,13 +6,22 @@ use std::process::Command;
 fn fetch_bochs() {
     #[cfg(target_os = "windows")]
     let mut child = Command::new("wsl.exe")
-        .args(&["svn", "co", "http://svn.code.sf.net/p/bochs/code/trunk/bochs", "bochs"])
+        .args(&[
+            "svn",
+            "co",
+            "http://svn.code.sf.net/p/bochs/code/trunk/bochs",
+            "bochs",
+        ])
         .spawn()
         .expect("Could not launch svn under wsl");
 
     #[cfg(not(target_os = "windows"))]
     let mut child = Command::new("svn")
-        .args(&["co", "http://svn.code.sf.net/p/bochs/code/trunk/bochs", "bochs"])
+        .args(&[
+            "co",
+            "http://svn.code.sf.net/p/bochs/code/trunk/bochs",
+            "bochs",
+        ])
         .spawn()
         .expect("Could not launch svn");
 
@@ -127,7 +136,7 @@ fn main() {
                 .include(Path::new("cabi"))
                 .file("cabi/logfunctions-cabi.cc")
                 .compile("logfunctions-cabi");
-        },
+        }
         _ => {
             #[cfg(not(target_os = "windows"))]
             cc::Build::new()
@@ -280,7 +289,6 @@ fn main() {
         .include(Path::new("cabi"))
         .file("cabi/apic.cc")
         .compile("apic");
-
 
     println!("cargo:rustc-link-lib=static=apic");
 

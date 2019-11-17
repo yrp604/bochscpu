@@ -1,4 +1,4 @@
-use serde::{Deserialize};
+use serde::Deserialize;
 
 use crate::cpu::{GlobalSeg, Seg, Zmm};
 
@@ -54,7 +54,6 @@ pub struct State {
 
     // TODO fp regs
     // TODO fp control info
-
     pub fpcw: u16,
     pub fpsw: u16,
     pub fptw: u16,
@@ -62,12 +61,10 @@ pub struct State {
     pub fpst: [u64; 8],
 
     // TODO xmm control info
-
     pub mxcsr: u32,
     pub mxcsr_mask: u32,
 
     // TODO cmm control info
-
     pub tsc: u64,
     pub efer: u32,
     pub kernel_gs_base: u64,
@@ -106,15 +103,63 @@ impl Default for State {
             r15: 0,
             rflags: 0,
 
-            es: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
-            cs: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
-            ss: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
-            ds: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
-            fs: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
-            gs: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
+            es: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
+            cs: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
+            ss: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
+            ds: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
+            fs: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
+            gs: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
 
-            ldtr: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
-            tr: Seg { present: false, attr: 0, base: 0, limit: 0, selector: 0 },
+            ldtr: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
+            tr: Seg {
+                present: false,
+                attr: 0,
+                base: 0,
+                limit: 0,
+                selector: 0,
+            },
             gdtr: GlobalSeg { base: 0, limit: 0 },
             idtr: GlobalSeg { base: 0, limit: 0 },
 
@@ -176,25 +221,16 @@ impl Default for State {
                 Zmm { q: [0; 8] },
                 Zmm { q: [0; 8] },
                 Zmm { q: [0; 8] },
-                ],
+            ],
 
-                mxcsr: 0,
-                mxcsr_mask: 0,
+            mxcsr: 0,
+            mxcsr_mask: 0,
 
-                fpcw: 0,
-                fpsw: 0,
-                fptw: 0,
-                fpop: 0,
-                fpst: [
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                ],
+            fpcw: 0,
+            fpsw: 0,
+            fptw: 0,
+            fpop: 0,
+            fpst: [0, 0, 0, 0, 0, 0, 0, 0],
         }
     }
 }

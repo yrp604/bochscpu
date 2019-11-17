@@ -1,8 +1,8 @@
 use std::mem;
 use std::slice;
 
-use crate::PhyAddress;
 use crate::mem::phy_translate;
+use crate::PhyAddress;
 
 pub fn phy_read_u64(gpa: PhyAddress) -> u64 {
     let mut buf = [0; mem::size_of::<u64>()];
@@ -19,7 +19,6 @@ pub fn phy_read_slice(gpa: PhyAddress, buf: &mut [u8]) {
         slice::from_raw_parts(src_ptr, buf.len())
     };
 
-
     buf.copy_from_slice(src);
 }
 
@@ -29,7 +28,7 @@ pub fn phy_read(gpa: PhyAddress, buf: &mut Vec<u8>, sz: usize) {
 
     let len = buf.len();
     buf.reserve(sz);
-    let buf_slice = &mut buf[len..len+sz];
+    let buf_slice = &mut buf[len..len + sz];
     phy_read_slice(gpa, buf_slice)
 }
 
