@@ -1,4 +1,3 @@
-#![feature(const_vec_new)]
 #![feature(trait_alias)]
 
 #[macro_use]

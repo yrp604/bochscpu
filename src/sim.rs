@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::ffi::{c_void, CStr};
 use std::os::raw::c_char;
+use std::ptr;
 
 use crate::NUM_CPUS;
 use crate::params::*;
@@ -159,7 +160,6 @@ lazy_static! {
 
         m
     };
-
 }
 
 #[no_mangle]
@@ -175,7 +175,7 @@ extern "C" fn sim_get_param_enum(p: *const c_char) -> *mut c_void {
     match PARAMS_ENUM.get(&s) {
         None => {
             warn!("no enum parameter: {}", s);
-            0 as *mut c_void
+            ptr::null_mut::<c_void>()
         },
         Some(v) => v.0,
     }
@@ -194,7 +194,7 @@ extern "C" fn sim_get_param_num(p: *const c_char) -> *mut c_void {
     match PARAMS_NUM.get(&s) {
         None => {
             warn!("no num parameter: {}", s);
-            0 as *mut c_void
+            ptr::null_mut::<c_void>()
         },
         Some(v) => v.0,
     }
@@ -213,7 +213,7 @@ extern "C" fn sim_get_param_bool(p: *const c_char) -> *mut c_void {
     match PARAMS_BOOL.get(&s) {
         None => {
             warn!("no bool parameter: {}", s);
-            0 as *mut c_void
+            ptr::null_mut::<c_void>()
         },
         Some(v) => v.0,
     }
@@ -232,7 +232,7 @@ extern "C" fn sim_get_param_string(p: *const c_char) -> *mut c_void {
     match PARAMS_STRING.get(&s) {
         None => {
             warn!("no string parameter: {}", s);
-            0 as *mut c_void
+            ptr::null_mut::<c_void>()
         },
         Some(v) => v.0,
     }

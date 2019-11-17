@@ -6,7 +6,6 @@
 set echo
 
 # NOTE: repeat-speedups breaks linear access hooks
-# NOTE: we might want configurable-msrs
 ./configure \
   --target=x86_64-pc-windows \
   --disable-repeat-speedups \
@@ -15,6 +14,7 @@ set echo
   --enable-cpu-level=6 \
   --enable-x86-64 \
   --enable-avx \
+  --enable-evex \
   --enable-vmx=2 \
   --enable-pci \
   --enable-instrumentation=../cabi \

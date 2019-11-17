@@ -1,10 +1,16 @@
+- [ ] Build improvements?
+- [ ] Fix SMP
+- [ ] Make SMP a rust feature
+- [ ] Put the last known good bochs revision in a file
+- [ ] Add CI
+- [ ] rustdoc all api methods :(
 - [x] Write rust harness to get log output
 - [x] Figure out how to zero init the bxcpu
 - [ ] Figure out why Asan doesnt work with a rust binary
 - [-] Figure out how to do mutable references to a context struct
 - [x] Figure out how to init memory
-      * [ ] Maybe replace lazy static with memory init routines
-      * [ ] Maybe replace const expr vecs with init routines
+      * [ ] replace `lazy_static` with `phf` or `std::sync::Once`
+      * [x] Maybe replace const expr vecs with init routines
 - [x] Figure out how to exit `cpu_loop`
 - [x] Get bochscpu dump and add methods to load/store the cpu state
 - [x] Write windbg-js to dump register state

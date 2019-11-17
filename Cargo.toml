@@ -5,12 +5,12 @@ authors = ["x"]
 edition = "2018"
 
 [lib]
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = ["dylib", "rlib"]
 
 [dependencies]
 ctor = "0.1"
 fnv = "1"
-hashbrown = "0.5"
+hashbrown = "0.6"
 lazy_static = "1"
 log = { version = "0.4", features = ["release_max_level_off"] }
 unreachable = "1"

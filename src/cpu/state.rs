@@ -83,8 +83,8 @@ pub struct State {
     pub tsc_aux: u64,
 }
 
-impl State {
-    pub fn new() -> Self {
+impl Default for State {
+    fn default() -> Self {
         Self {
             rip: 0,
 

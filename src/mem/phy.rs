@@ -20,7 +20,7 @@ pub fn phy_read_slice(gpa: PhyAddress, buf: &mut [u8]) {
     };
 
 
-    &buf.copy_from_slice(src);
+    buf.copy_from_slice(src);
 }
 
 pub fn phy_read(gpa: PhyAddress, buf: &mut Vec<u8>, sz: usize) {

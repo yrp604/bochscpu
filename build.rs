@@ -1,10 +1,71 @@
 use std::env;
+use std::fs::rename;
 use std::path::Path;
+use std::process::Command;
+
+fn fetch_bochs() {
+    #[cfg(target_os = "windows")]
+    let mut child = Command::new("wsl.exe")
+        .args(&["svn", "co", "http://svn.code.sf.net/p/bochs/code/trunk/bochs", "bochs"])
+        .spawn()
+        .expect("Could not launch svn under wsl");
+
+    #[cfg(not(target_os = "windows"))]
+    let mut child = Command::new("svn")
+        .args(&["co", "http://svn.code.sf.net/p/bochs/code/trunk/bochs", "bochs"])
+        .spawn()
+        .expect("Could not launch svn");
+
+    assert_eq!(child.wait().unwrap().code().unwrap(), 0);
+}
+
+fn config_bochs() {
+    #[cfg(target_os = "windows")]
+    let mut child = Command::new("wsl.exe")
+        .args(&["sh", "-c", "cd bochs && sh .conf.cpu-msvc"])
+        .spawn()
+        .expect("Could not configure bochs under wsl");
+    #[cfg(not(target_os = "windows"))]
+    let mut child = Command::new("sh")
+        .args(&["-c", "cd bochs && sh .conf.cpu"])
+        .spawn()
+        .expect("Could not configure bochs");
+
+    assert_eq!(child.wait().unwrap().code().unwrap(), 0);
+}
+
+fn build_bochs() {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("cmd")
+            .args(&["/C", "cd bochs && nmake"])
+            .status();
+        let _ = Command::new("cmd")
+            .args(&["/C", "cd bochs/cpu/fpu && nmake"])
+            .status();
+
+        rename("bochs/cpu/libcpu.a", "bochs/cpu/cpu.lib").unwrap();
+        rename("bochs/cpu/fpu/libfpu.a", "bochs/cpu/fpu/fpu.lib").unwrap();
+        rename("bochs/cpu/avx/libavx.a", "bochs/cpu/avx/avx.lib").unwrap();
+        rename("bochs/cpu/cpudb/libcpudb.a", "bochs/cpu/cpudb/cpudb.lib").unwrap();
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = Command::new("sh")
+            .args(&["-c", "cd bochs && make"])
+            .status();
+    }
+}
 
 fn main() {
     // TODO figure out why the CFLAGS arent being inherited...
     // .flag("-fsanitize=address").flag("-Wno-unused-parameter")
     //
+
+    fetch_bochs();
+    config_bochs();
+    build_bochs();
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()

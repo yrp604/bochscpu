@@ -207,5 +207,5 @@ pub fn virt_translate_checked(cr3: PhyAddress, gva: Address) -> Result<PhyAddres
         return Err(VirtMemError::PteNotPresent);
     }
 
-    return Ok(pte_paddr + page_offset(gva));
+    Ok(pte_paddr + page_offset(gva))
 }
