@@ -1,8 +1,10 @@
-use serde::Deserialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use crate::cpu::{GlobalSeg, Seg, Zmm};
 
-#[derive(Clone, PartialEq, Eq, Debug, Hash, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct State {
     pub rax: u64,
     pub rcx: u64,

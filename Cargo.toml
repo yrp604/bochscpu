@@ -14,8 +14,7 @@ hashbrown = "0.6"
 lazy_static = "1"
 log = { version = "0.4", features = ["release_max_level_off"] }
 unreachable = "1"
-serde = { version = "1", features = ["derive"] }
-serde_derive = "1"
+serde = { version = "1", features = ["derive"], optional = true }
 
 [build-dependencies]
 cc = "1"

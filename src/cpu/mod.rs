@@ -1,3 +1,6 @@
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::syncunsafecell::SyncUnsafeCell;
 use crate::{Address, PhyAddress, NUM_CPUS};
 
@@ -173,18 +176,21 @@ enum DRegs {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Zmm {
     pub q: [u64; 8],
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GlobalSeg {
     pub base: Address,
     pub limit: u16,
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Seg {
     pub present: bool,
     pub selector: u16,
