@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 use std::slice;
-use unreachable::unreachable;
+use std::hint::unreachable_unchecked;
 
 use crate::{Address, PhyAddress};
 
@@ -48,7 +48,7 @@ impl From<u32> for Branch {
             18 => Branch::Sysret,
             19 => Branch::Sysenter,
             20 => Branch::Sysexit,
-            _ => unsafe { unreachable() },
+            _ => unsafe { unreachable_unchecked() },
         }
     }
 }
@@ -78,7 +78,7 @@ impl From<u32> for TlbCntrl {
             16 => TlbCntrl::InvEpt,
             17 => TlbCntrl::InvVpid,
             18 => TlbCntrl::InvPcid,
-            _ => unsafe { unreachable() },
+            _ => unsafe { unreachable_unchecked() },
         }
     }
 }
@@ -94,7 +94,7 @@ impl From<u32> for CacheCntrl {
         match i {
             10 => CacheCntrl::Invd,
             11 => CacheCntrl::Wbind,
-            _ => unsafe { unreachable() },
+            _ => unsafe { unreachable_unchecked() },
         }
     }
 }
@@ -114,7 +114,7 @@ impl From<u32> for PrefetchHint {
             1 => PrefetchHint::T0,
             2 => PrefetchHint::T1,
             3 => PrefetchHint::T2,
-            _ => unsafe { unreachable() },
+            _ => unsafe { unreachable_unchecked() },
         }
     }
 }
@@ -134,7 +134,7 @@ impl From<u32> for MemAccess {
             1 => MemAccess::Write,
             2 => MemAccess::Execute,
             3 => MemAccess::RW,
-            _ => unsafe { unreachable() },
+            _ => unsafe { unreachable_unchecked() },
         }
     }
 }
