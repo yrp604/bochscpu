@@ -159,7 +159,7 @@ static mut MWAIT_HOOKS: Vec<Box<dyn MwaitHook>> = Vec::new();
 
 pub trait CnearBranchTakenHook = FnMut(u32, Address, Address);
 pub trait CnearBranchNotTakenHook = FnMut(u32, Address);
-pub trait UcnearBranchHook = FnMut(u32, u32, Address, Address);
+pub trait UcnearBranchHook = FnMut(u32, Branch, Address, Address);
 pub trait FarBranchHook = FnMut(u32, Branch, (u16, Address), (u16, Address));
 
 static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<dyn CnearBranchTakenHook>> = Vec::new();
@@ -312,7 +312,7 @@ extern "C" fn bx_instr_ucnear_branch(cpu: u32, what: u32, branch_eip: Address, n
     unsafe {
         UCNEAR_BRANCH_HOOKS
             .iter_mut()
-            .for_each(|x| x(cpu, what, branch_eip, new_eip))
+            .for_each(|x| x(cpu, what.into(), branch_eip, new_eip))
     }
 }
 #[no_mangle]
