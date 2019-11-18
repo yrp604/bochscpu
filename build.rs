@@ -1,14 +1,18 @@
 use std::env;
-use std::fs::rename;
+use std::fs::{read_to_string, rename};
 use std::path::Path;
 use std::process::Command;
 
 fn fetch_bochs() {
+    let rev = read_to_string("BOCHS").unwrap_or(String::from("HEAD"));
+
     #[cfg(target_os = "windows")]
     let mut child = Command::new("wsl.exe")
         .args(&[
             "svn",
-            "co",
+            "checkout",
+            "--revision",
+            &rev,
             "http://svn.code.sf.net/p/bochs/code/trunk/bochs",
             "bochs",
         ])
@@ -18,7 +22,9 @@ fn fetch_bochs() {
     #[cfg(not(target_os = "windows"))]
     let mut child = Command::new("svn")
         .args(&[
-            "co",
+            "checkout",
+            "--revision",
+            &rev,
             "http://svn.code.sf.net/p/bochs/code/trunk/bochs",
             "bochs",
         ])
