@@ -6,6 +6,8 @@ use crate::cpu::{GlobalSeg, Seg, Zmm};
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct State {
+    pub bochscpu_seed: u64,
+
     pub rax: u64,
     pub rcx: u64,
     pub rdx: u64,
@@ -85,6 +87,8 @@ pub struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
+            bochscpu_seed: 0,
+
             rip: 0,
 
             rax: 0,

@@ -8,6 +8,7 @@ edition = "2018"
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
+blake2 = "0.8"
 ctor = "0.1"
 fnv = "1"
 hashbrown = "0.6"

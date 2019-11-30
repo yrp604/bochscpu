@@ -1,3 +1,4 @@
+use blake2::{Blake2b, Digest};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -200,39 +201,56 @@ pub struct Seg {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
-pub enum StopReason {
-    None,
-    Crash,
-    Done,
-    IO,
-    TripleFault,
-    Timeout,
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum RunState {
     Go,
-    Stop(StopReason),
+    Stop,
 }
 
-// this needs to be global visible so callbacks can tell us to stop emulation
-// despite the intuitive race condition where different cpus modify their state
-// concurrently, bochs serializes cpu execution even with multiple cpus, so
-// this should be ok. I hope.
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+struct Meta {
+    seed: u64,
+    state: RunState,
+}
+
+impl Default for Meta {
+    fn default() -> Self {
+        Self { seed: 0, state: RunState::Stop }
+    }
+}
+
 #[ctor]
-pub static CPU_RUN_STATES: SyncUnsafeCell<Vec<RunState>> =
-    { SyncUnsafeCell::new(vec![RunState::Stop(StopReason::None); NUM_CPUS]) };
+static CPU_META: SyncUnsafeCell<Vec<Meta>> =
+    { SyncUnsafeCell::new(vec![Meta::default(); NUM_CPUS]) };
 
-unsafe fn cpu_run_states() -> &'static mut Vec<RunState> {
-    &mut (*(CPU_RUN_STATES.0.get()))
+unsafe fn cpu_metas() -> &'static mut Vec<Meta> {
+    &mut (*(CPU_META.0.get()))
 }
 
-pub unsafe fn run_state(id: u32) -> RunState {
-    cpu_run_states()[id as usize]
+unsafe fn cpu_meta(id: u32) -> &'static mut Meta {
+    &mut cpu_metas()[id as usize]
 }
 
-pub unsafe fn set_run_state(id: u32, rs: RunState) {
-    cpu_run_states()[id as usize] = rs;
+unsafe fn run_state(id: u32) -> RunState {
+    cpu_meta(id).state
+}
+
+unsafe fn set_run_state(id: u32, rs: RunState) {
+    cpu_meta(id).state = rs;
+}
+
+unsafe fn seed(id: u32) -> u64 {
+    cpu_meta(id).seed
+}
+
+unsafe fn set_seed(id: u32, seed: u64) {
+    cpu_meta(id).seed = seed;
+}
+
+#[no_mangle]
+extern "C" fn bochscpu_rand(id: u32) -> i32 {
+    let x: u32 = Blake2b::digest(&seed(id).to_le_bytes());
+
+    0
 }
 
 pub struct Cpu {
@@ -278,7 +296,7 @@ impl Cpu {
 
         while cpu_killbit(self.handle) == 0 {
             match run_state(self.handle) {
-                RunState::Stop(_) => break,
+                RunState::Stop => break,
                 RunState::Go => cpu_loop(self.handle),
             }
         }
@@ -293,7 +311,7 @@ impl Cpu {
     pub unsafe fn set_run_state(&self, rs: RunState) {
         match rs {
             RunState::Go => cpu_clear_killbit(self.handle),
-            RunState::Stop(_) => cpu_set_killbit(self.handle),
+            RunState::Stop => cpu_set_killbit(self.handle),
         };
 
         set_run_state(self.handle, rs)
@@ -341,6 +359,8 @@ impl Cpu {
 
     pub unsafe fn state(&self) -> State {
         State {
+            bochscpu_seed: seed(self.handle),
+
             rip: self.rip(),
 
             rax: self.rax(),
@@ -456,6 +476,8 @@ impl Cpu {
     }
 
     pub unsafe fn set_state(&self, s: &State) {
+        set_seed(self.handle, s.bochscpu_seed);
+
         self.set_rip(s.rip);
 
         self.set_rax(s.rax);

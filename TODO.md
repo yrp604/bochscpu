@@ -10,4 +10,3 @@
 - [ ] replace `lazy_static` with `phf` or `std::sync::Once`
 - [ ] Figure out patching bochs in a not-shit way
       * [ ] Fix rdrand via patching method with rip ^ branch ctr
-- [ ] Figure out how symbols are going to work

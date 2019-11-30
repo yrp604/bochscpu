@@ -4,7 +4,6 @@
 #include "bochs.h"
 #include "cpu/cpu.h"
 
-
 typedef BX_CPU_C *BX_CPU_C_PTR;
 
 extern "C" {
@@ -88,8 +87,6 @@ BOCHSAPI Bit32u cpu_get_eflags(unsigned id) {
 BOCHSAPI void cpu_set_eflags(unsigned id, Bit32u eflags) {
     BX_CPU(id)->setEFlags(eflags);
 }
-
-// TODO implement get segment registers
 
 void get_seg(
         unsigned id,

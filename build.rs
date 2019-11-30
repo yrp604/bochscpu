@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::{read_to_string, rename};
+use std::fs::{read_dir, read_to_string, rename};
 use std::path::Path;
 use std::process::Command;
 
@@ -32,6 +32,19 @@ fn fetch_bochs() {
         .expect("Could not launch svn");
 
     assert_eq!(child.wait().unwrap().code().unwrap(), 0);
+}
+
+fn patch_bochs() {
+    for entry in read_dir("patches").unwrap() {
+        let entry = entry.unwrap();
+
+        let mut child = Command::new("git")
+            .args(&["apply", entry.path().to_str().unwrap()])
+            .spawn()
+            .expect("Could not launch git");
+
+        assert_eq!(child.wait().unwrap().code().unwrap(), 0);
+    }
 }
 
 fn config_bochs() {
@@ -79,6 +92,7 @@ fn main() {
     //
 
     fetch_bochs();
+    patch_bochs();
     config_bochs();
     build_bochs();
 
