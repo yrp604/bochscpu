@@ -40,6 +40,12 @@ BOCHSAPI void cpu_delete(unsigned id) {
 #endif
 }
 
+BOCHSAPI void cpu_bail(unsigned id) {
+    BX_CPU_C *c = BX_CPU(id);
+
+    longjmp(c->jmp_buf_env, 1);
+}
+
 BOCHSAPI void cpu_set_mode(unsigned id) {
     BX_CPU_C *c = BX_CPU(id);
 

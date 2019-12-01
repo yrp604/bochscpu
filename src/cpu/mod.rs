@@ -19,6 +19,7 @@ extern "C" {
 
     fn cpu_loop(id: u32);
 
+    fn cpu_bail(id: u32);
     fn cpu_set_mode(id: u32);
 
     fn cpu_get_pc(id: u32) -> u64;
@@ -320,12 +321,15 @@ impl Cpu {
     }
 
     pub unsafe fn set_run_state(&self, rs: RunState) {
+        set_run_state(self.handle, rs);
+
         match rs {
             RunState::Go => cpu_clear_killbit(self.handle),
-            RunState::Stop => cpu_set_killbit(self.handle),
+            RunState::Stop => {
+                cpu_set_killbit(self.handle);
+                cpu_bail(self.handle);
+            }
         };
-
-        set_run_state(self.handle, rs)
     }
 
     pub unsafe fn seed(&self) -> u64 {
