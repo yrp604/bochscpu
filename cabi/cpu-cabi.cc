@@ -40,7 +40,7 @@ BOCHSAPI void cpu_delete(unsigned id) {
 #endif
 }
 
-BOCHSAPI void cpu_set_state(unsigned id) {
+BOCHSAPI void cpu_set_mode(unsigned id) {
     BX_CPU_C *c = BX_CPU(id);
 
     c->TLB_flush();

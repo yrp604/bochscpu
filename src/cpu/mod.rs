@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use blake2::{Blake2b, Digest};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -17,7 +19,7 @@ extern "C" {
 
     fn cpu_loop(id: u32);
 
-    fn cpu_set_state(id: u32);
+    fn cpu_set_mode(id: u32);
 
     fn cpu_get_pc(id: u32) -> u64;
     fn cpu_set_pc(id: u32, val: u64);
@@ -207,50 +209,52 @@ pub enum RunState {
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
-struct Meta {
+struct Tracking {
     seed: u64,
     state: RunState,
 }
 
-impl Default for Meta {
+impl Default for Tracking {
     fn default() -> Self {
         Self { seed: 0, state: RunState::Stop }
     }
 }
 
 #[ctor]
-static CPU_META: SyncUnsafeCell<Vec<Meta>> =
-    { SyncUnsafeCell::new(vec![Meta::default(); NUM_CPUS]) };
+static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
+    { SyncUnsafeCell::new(vec![Tracking::default(); NUM_CPUS]) };
 
-unsafe fn cpu_metas() -> &'static mut Vec<Meta> {
-    &mut (*(CPU_META.0.get()))
-}
-
-unsafe fn cpu_meta(id: u32) -> &'static mut Meta {
-    &mut cpu_metas()[id as usize]
+unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
+    &mut (*(CPU_TRACKING.0.get()))[id as usize]
 }
 
 unsafe fn run_state(id: u32) -> RunState {
-    cpu_meta(id).state
+    cpu_tracking(id).state
 }
 
 unsafe fn set_run_state(id: u32, rs: RunState) {
-    cpu_meta(id).state = rs;
+    cpu_tracking(id).state = rs;
 }
 
 unsafe fn seed(id: u32) -> u64 {
-    cpu_meta(id).seed
+    cpu_tracking(id).seed
 }
 
 unsafe fn set_seed(id: u32, seed: u64) {
-    cpu_meta(id).seed = seed;
+    cpu_tracking(id).seed = seed;
 }
 
 #[no_mangle]
-extern "C" fn bochscpu_rand(id: u32) -> i32 {
-    let x: u32 = Blake2b::digest(&seed(id).to_le_bytes());
+extern "C" fn bochscpu_rand(id: u32) -> u64 {
+    let seed = unsafe { seed(id) };
+    let d = Blake2b::digest(&seed.to_le_bytes());
 
-    0
+    // set the seed from the low 64 bits
+    let new_seed = u64::from_le_bytes(d[0..8].try_into().unwrap());
+    unsafe { set_seed(id, new_seed) };
+
+    // return the next 32 bits as entropy
+    u64::from_le_bytes(d[8..16].try_into().unwrap())
 }
 
 pub struct Cpu {
@@ -262,6 +266,13 @@ impl Cpu {
         cpu_new(id);
 
         Self { handle: id }
+    }
+
+    pub unsafe fn new_with_seed(id: u32, seed: u64) -> Self {
+        let c = Self::new(id);
+        c.set_seed(seed);
+
+        c
     }
 
     pub unsafe fn new_with_state(id: u32, s: &State) -> Self {
@@ -315,6 +326,14 @@ impl Cpu {
         };
 
         set_run_state(self.handle, rs)
+    }
+
+    pub unsafe fn seed(&self) -> u64 {
+        seed(self.handle)
+    }
+
+    pub unsafe fn set_seed(&self, new_seed: u64) {
+        set_seed(self.handle, new_seed)
     }
 
     // rax=0000000000000000 rbx=00000202e01c5080 rcx=00000202e01b5c88
@@ -476,7 +495,7 @@ impl Cpu {
     }
 
     pub unsafe fn set_state(&self, s: &State) {
-        set_seed(self.handle, s.bochscpu_seed);
+        self.set_seed(s.bochscpu_seed);
 
         self.set_rip(s.rip);
 
@@ -552,8 +571,6 @@ impl Cpu {
         for (ii, f) in (&s.fpst).iter().enumerate() {
             self.set_fp_st(ii, *f);
         }
-
-        cpu_set_state(self.handle)
     }
 
     //
@@ -760,6 +777,7 @@ impl Cpu {
 
     pub unsafe fn set_cs(&self, v: Seg) {
         self.set_seg(SegRegs::Cs, v);
+        self.set_mode();
     }
 
     pub unsafe fn ss(&self) -> Seg {
@@ -949,7 +967,8 @@ impl Cpu {
     }
 
     pub unsafe fn set_cr0(&self, v: u32) {
-        cpu_set_cr0(self.handle, v)
+        cpu_set_cr0(self.handle, v);
+        self.set_mode();
     }
 
     pub unsafe fn cr2(&self) -> Address {
@@ -989,7 +1008,12 @@ impl Cpu {
     }
 
     pub unsafe fn set_efer(&self, v: u32) {
-        cpu_set_efer(self.handle, v)
+        cpu_set_efer(self.handle, v);
+        self.set_mode();
+    }
+
+    pub unsafe fn set_mode(&self) {
+        cpu_set_mode(self.handle)
     }
 
     pub unsafe fn xcr0(&self) -> u32 {
