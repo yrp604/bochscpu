@@ -19,7 +19,6 @@ extern "C" {
 
     fn cpu_loop(id: u32);
 
-    fn cpu_bail(id: u32);
     fn cpu_set_mode(id: u32);
 
     fn cpu_get_pc(id: u32) -> u64;
@@ -138,7 +137,12 @@ extern "C" {
     fn cpu_get_fp_st(id: u32, reg: u32) -> u64;
     fn cpu_set_fp_st(id: u32, reg: u32, val: u64);
 
-    fn cpu_killbit(id: u32) -> u32;
+    /// Bail out of the cpu eval loop
+    ///
+    /// This ffi's to longjmp, meaning some variables drop routines might be
+    /// skipped.
+    pub fn cpu_bail(id: u32) -> !;
+    pub fn cpu_killbit(id: u32) -> u32;
     fn cpu_set_killbit(id: u32);
     fn cpu_clear_killbit(id: u32);
 }
@@ -325,10 +329,7 @@ impl Cpu {
 
         match rs {
             RunState::Go => cpu_clear_killbit(self.handle),
-            RunState::Stop => {
-                cpu_set_killbit(self.handle);
-                cpu_bail(self.handle);
-            }
+            RunState::Stop => cpu_set_killbit(self.handle),
         };
     }
 
@@ -1016,6 +1017,13 @@ impl Cpu {
         self.set_mode();
     }
 
+    /// Update the internal bochs cpu mode
+    ///
+    /// This corresponds to the bochs function `handleCpuModeChange()`, and is
+    /// implicitly called via `set_cs`, `set_cr0`, or `set_efer`. By my
+    /// understanding, these are the only functions which can result in a cpu
+    /// mode change, but the function is exposed in case I've missed some. If
+    /// you find some context where you need to call it, please file a bug.
     pub unsafe fn set_mode(&self) {
         cpu_set_mode(self.handle)
     }

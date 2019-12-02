@@ -1,4 +1,5 @@
 #![feature(trait_alias)]
+#![feature(unwind_attributes)]
 
 #[macro_use]
 extern crate ctor;
