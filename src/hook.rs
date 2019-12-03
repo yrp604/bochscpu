@@ -221,8 +221,17 @@ static mut VMEXIT_HOOKS: Vec<Box<dyn VmexitHook>> = Vec::new();
 pub unsafe fn init_env<T: InitEnvHook + 'static>(h: T) {
     INIT_ENV_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn init_env_clear() {
+    INIT_ENV_HOOKS.clear()
+}
+
 pub unsafe fn exit_env<T: ExitEnvHook + 'static>(h: T) {
     EXIT_ENV_HOOKS.push(Box::new(h))
+}
+
+pub unsafe fn exit_env_clear() {
+    EXIT_ENV_HOOKS.clear()
 }
 
 #[no_mangle]
@@ -239,17 +248,41 @@ extern "C" fn bx_instr_exit_env() {
 pub unsafe fn initialize<T: InitializeHook + 'static>(h: T) {
     INITIALIZE_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn initialize_clear() {
+    INITIALIZE_HOOKS.clear()
+}
+
 pub unsafe fn exit<T: ExitHook + 'static>(h: T) {
     EXIT_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn exit_clear() {
+    EXIT_HOOKS.clear()
+}
+
 pub unsafe fn reset<T: ResetHook + 'static>(h: T) {
     RESET_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn reset_clear() {
+    RESET_HOOKS.clear()
+}
+
 pub unsafe fn hlt<T: HltHook + 'static>(h: T) {
     HLT_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn hlt_clear() {
+    HLT_HOOKS.clear()
+}
+
 pub unsafe fn mwait<T: MwaitHook + 'static>(h: T) {
     MWAIT_HOOKS.push(Box::new(h))
+}
+
+pub unsafe fn mwait_clear() {
+    MWAIT_HOOKS.clear()
 }
 
 #[no_mangle]
@@ -299,14 +332,33 @@ extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
 pub unsafe fn cnear_branch_taken<T: CnearBranchTakenHook + 'static>(h: T) {
     CNEAR_BRANCH_TAKEN_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn cnear_branch_taken_clear() {
+    CNEAR_BRANCH_TAKEN_HOOKS.clear()
+}
+
 pub unsafe fn cnear_branch_not_taken<T: CnearBranchNotTakenHook + 'static>(h: T) {
     CNEAR_BRANCH_NOT_TAKEN_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn cnear_branch_not_taken_clear() {
+    CNEAR_BRANCH_NOT_TAKEN_HOOKS.clear()
+}
+
 pub unsafe fn ucnear_branch<T: UcnearBranchHook + 'static>(h: T) {
     UCNEAR_BRANCH_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn ucnear_branch_clear() {
+    UCNEAR_BRANCH_HOOKS.clear()
+}
+
 pub unsafe fn far_branch<T: FarBranchHook + 'static>(h: T) {
     FAR_BRANCH_HOOKS.push(Box::new(h))
+}
+
+pub unsafe fn far_branch_clear() {
+    FAR_BRANCH_HOOKS.clear()
 }
 
 #[no_mangle]
@@ -357,20 +409,38 @@ extern "C" fn bx_instr_far_branch(
     }
 }
 
-//
-//
 pub unsafe fn opcode<T: OpcodeHook + 'static>(h: T) {
     OPCODE_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn opcode_clear() {
+    OPCODE_HOOKS.clear()
+}
+
 pub unsafe fn interrupt<T: InterruptHook + 'static>(h: T) {
     INTERRUPT_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn interrupt_clear() {
+    INTERRUPT_HOOKS.clear()
+}
+
 pub unsafe fn exception<T: ExceptionHook + 'static>(h: T) {
     EXCEPTION_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn exception_clear() {
+    EXCEPTION_HOOKS.clear()
+}
+
 pub unsafe fn hw_interrupt<T: HwInterruptHook + 'static>(h: T) {
     HW_INTERRUPT_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn hw_interrupt_clear() {
+    HW_INTERRUPT_HOOKS.clear()
+}
+
 #[no_mangle]
 extern "C" fn bx_instr_opcode(
     cpu: u32,
@@ -429,15 +499,35 @@ extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: Address)
 pub unsafe fn tlb_cntrl<T: TlbCntrlHook + 'static>(h: T) {
     TLB_CNTRL_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn tlb_cntrl_clear() {
+    TLB_CNTRL_HOOKS.clear()
+}
+
 pub unsafe fn cache_cntrl<T: CacheCntrlHook + 'static>(h: T) {
     CACHE_CNTRL_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn cache_cntrl_clear() {
+    CACHE_CNTRL_HOOKS.clear()
+}
+
 pub unsafe fn prefetch_hint<T: PrefetchHintHook + 'static>(h: T) {
     PREFETCH_HINT_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn prefetch_hint_clear() {
+    PREFETCH_HINT_HOOKS.clear()
+}
+
 pub unsafe fn clflush<T: ClflushHook + 'static>(h: T) {
     CLFLUSH_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn clflush_clear() {
+    CLFLUSH_HOOKS.clear()
+}
+
 #[no_mangle]
 extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
     let ty = what.into();
@@ -486,20 +576,39 @@ extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
     }
 }
 
-//
-
-// You probably don't want this -- due to some as of yet unknown state that we
-// dont restore this will sometimes be called twice for a single guest
-// instruction. Use after_execution.
+/// Hook before instruction execution
+///
+/// # Note
+///
+/// This hook can be executed multiple times for a single instruction,
+/// consider `push rax`, where the stack is not present in the current page
+/// table. In that case, this hook execute then will generate a #PF. The
+/// emulator could service that #PF, and then return to the `push` and execute
+/// the hook again.
 pub unsafe fn before_execution<T: BeforeExecutionHook + 'static>(h: T) {
     BEFORE_EXECUTION_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn before_execution_clear() {
+    BEFORE_EXECUTION_HOOKS.clear()
+}
+
 pub unsafe fn after_execution<T: AfterExecutionHook + 'static>(h: T) {
     AFTER_EXECUTION_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn after_execution_clear() {
+    AFTER_EXECUTION_HOOKS.clear()
+}
+
 pub unsafe fn repeat_iteration<T: RepeatIterationHook + 'static>(h: T) {
     REPEAT_ITERATION_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn repeat_iteration_clear() {
+    REPEAT_ITERATION_HOOKS.clear()
+}
+
 #[no_mangle]
 extern "C" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
     unsafe {
@@ -530,11 +639,25 @@ extern "C" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
 pub unsafe fn inp<T: InpHook + 'static>(h: T) {
     INP_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn inp_clear() {
+    INP_HOOKS.clear()
+}
+
 pub unsafe fn inp2<T: Inp2Hook + 'static>(h: T) {
     INP2_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn inp2_clear() {
+    INP2_HOOKS.clear()
+}
+
 pub unsafe fn outp<T: OutpHook + 'static>(h: T) {
     OUTP_HOOKS.push(Box::new(h))
+}
+
+pub unsafe fn outp_clear() {
+    OUTP_HOOKS.clear()
 }
 
 // XXX these functions don't have cpuid's passed to them, so we cant check the
@@ -568,9 +691,19 @@ extern "C" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
 pub unsafe fn lin_access<T: LinAccessHook + 'static>(h: T) {
     LIN_ACCESS_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn lin_access_clear() {
+    LIN_ACCESS_HOOKS.clear()
+}
+
 pub unsafe fn phy_access<T: PhyAccessHook + 'static>(h: T) {
     PHY_ACCESS_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn phy_access_clear() {
+    PHY_ACCESS_HOOKS.clear()
+}
+
 #[no_mangle]
 extern "C" fn bx_instr_lin_access(
     cpu: u32,
@@ -588,6 +721,7 @@ extern "C" fn bx_instr_lin_access(
         if cpu_killbit(cpu) != 0 { cpu_bail(cpu) }
     }
 }
+
 #[no_mangle]
 extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memtype: u32, rw: u32) {
     unsafe {
@@ -604,6 +738,11 @@ extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memtype: u32
 pub unsafe fn wrmsr<T: WrmsrHook + 'static>(h: T) {
     WRMSR_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn wrmsr_clear() {
+    WRMSR_HOOKS.clear()
+}
+
 #[no_mangle]
 extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
     unsafe {
@@ -618,6 +757,11 @@ extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
 pub unsafe fn vmexit<T: VmexitHook + 'static>(h: T) {
     VMEXIT_HOOKS.push(Box::new(h))
 }
+
+pub unsafe fn vmexit_clear() {
+    VMEXIT_HOOKS.clear()
+}
+
 #[no_mangle]
 extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
     unsafe {
@@ -627,4 +771,44 @@ extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
 
         if cpu_killbit(cpu) != 0 { cpu_bail(cpu) }
     }
+}
+
+pub unsafe fn clear() {
+    init_env_clear();
+    exit_env_clear();
+
+    initialize_clear();
+    exit_clear();
+    reset_clear();
+    hlt_clear();
+    mwait_clear();
+
+    cnear_branch_taken_clear();
+    cnear_branch_not_taken_clear();
+    ucnear_branch_clear();
+    far_branch_clear();
+
+    opcode_clear();
+    interrupt_clear();
+    exception_clear();
+    hw_interrupt_clear();
+
+    tlb_cntrl_clear();
+    cache_cntrl_clear();
+    prefetch_hint_clear();
+    clflush_clear();
+
+    before_execution_clear();
+    after_execution_clear();
+    repeat_iteration_clear();
+
+    inp_clear();
+    inp2_clear();
+    outp_clear();
+
+    lin_access_clear();
+    phy_access_clear();
+
+    wrmsr_clear();
+    vmexit_clear();
 }

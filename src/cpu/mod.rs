@@ -140,9 +140,11 @@ extern "C" {
     /// Bail out of the cpu eval loop
     ///
     /// This ffi's to longjmp, meaning some variables drop routines might be
-    /// skipped.
-    pub fn cpu_bail(id: u32) -> !;
-    pub fn cpu_killbit(id: u32) -> u32;
+    /// skipped, depending on the context and platform
+    pub(crate) fn cpu_bail(id: u32) -> !;
+
+    /// Return the current killbit status
+    pub(crate) fn cpu_killbit(id: u32) -> u32;
     fn cpu_set_killbit(id: u32);
     fn cpu_clear_killbit(id: u32);
 }
@@ -289,14 +291,6 @@ impl Cpu {
 
     pub fn from(id: u32) -> Self {
         Self { handle: id }
-    }
-
-    pub unsafe fn from_with_state(id: u32, s: &State) -> Self {
-        let c = Self::from(id);
-
-        c.set_state(s);
-
-        c
     }
 
     pub fn id(&self) -> u32 {

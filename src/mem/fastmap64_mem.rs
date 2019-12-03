@@ -1,7 +1,7 @@
+use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 
 use fnv::FnvHasher;
-use hashbrown::HashMap;
 
 use crate::mem::page_off;
 use crate::syncunsafecell::SyncUnsafeCell;

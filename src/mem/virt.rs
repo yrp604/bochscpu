@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt;
 use std::iter;
 use std::mem;
 
@@ -38,6 +40,22 @@ pub enum VirtMemError {
     PdpteNotPresent,
     PdeNotPresent,
     PteNotPresent,
+}
+
+impl fmt::Display for VirtMemError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for VirtMemError {
+    fn description(&self) -> &str {
+        "virtual to physical translation error"
+    }
+
+    fn cause(&self) -> Option<&dyn Error> {
+        None
+    }
 }
 
 pub fn virt_read_u64(cr3: PhyAddress, gva: Address) -> u64 {
@@ -108,13 +126,15 @@ pub fn virt_read_checked(
     unsafe {
         buf.set_len(len + sz);
 
+        let r = virt_read_slice_checked(cr3, gva, &mut buf[len..len + sz]);
+
         // if we errored, roll the length back to the original
-        if virt_read_slice_checked(cr3, gva, &mut buf[len..len + sz]).is_err() {
+        if r.is_err() {
             buf.set_len(len);
         }
-    }
 
-    Ok(())
+        r
+    }
 }
 
 pub fn virt_read_slice(cr3: PhyAddress, gva: Address, buf: &mut [u8]) {
