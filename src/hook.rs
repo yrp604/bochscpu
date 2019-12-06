@@ -21,6 +21,7 @@ use crate::cpu::{cpu_bail, cpu_killbit};
 // }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
 pub enum Branch {
     Jmp = 10,
     JmpIndirect = 11,
@@ -55,6 +56,7 @@ impl From<u32> for Branch {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
 pub enum TlbCntrl {
     MovCr0 = 10,
     MovCr3 = 11,
@@ -85,6 +87,7 @@ impl From<u32> for TlbCntrl {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
 pub enum CacheCntrl {
     Invd = 10,
     Wbind = 11,
@@ -101,6 +104,7 @@ impl From<u32> for CacheCntrl {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
 pub enum PrefetchHint {
     Nta = 0,
     T0 = 1,
@@ -121,6 +125,7 @@ impl From<u32> for PrefetchHint {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
 pub enum MemAccess {
     Read = 0,
     Write = 1,
@@ -140,20 +145,10 @@ impl From<u32> for MemAccess {
     }
 }
 
-pub trait InitEnvHook = FnMut();
-pub trait ExitEnvHook = FnMut();
-
-static mut INIT_ENV_HOOKS: Vec<Box<dyn InitEnvHook>> = Vec::new();
-static mut EXIT_ENV_HOOKS: Vec<Box<dyn ExitEnvHook>> = Vec::new();
-
-pub trait InitializeHook = FnMut(u32);
-pub trait ExitHook = FnMut(u32);
 pub trait ResetHook = FnMut(u32, u32);
 pub trait HltHook = FnMut(u32);
-pub trait MwaitHook = FnMut(u32, PhyAddress, u32, u32);
+pub trait MwaitHook = FnMut(u32, PhyAddress, usize, u32);
 
-static mut INITIALIZE_HOOKS: Vec<Box<dyn InitializeHook>> = Vec::new();
-static mut EXIT_HOOKS: Vec<Box<dyn ExitHook>> = Vec::new();
 static mut RESET_HOOKS: Vec<Box<dyn ResetHook>> = Vec::new();
 static mut HLT_HOOKS: Vec<Box<dyn HltHook>> = Vec::new();
 static mut MWAIT_HOOKS: Vec<Box<dyn MwaitHook>> = Vec::new();
@@ -216,50 +211,17 @@ static mut WRMSR_HOOKS: Vec<Box<dyn WrmsrHook>> = Vec::new();
 pub trait VmexitHook = FnMut(u32, u32, u64);
 static mut VMEXIT_HOOKS: Vec<Box<dyn VmexitHook>> = Vec::new();
 
-//
-
-pub unsafe fn init_env<T: InitEnvHook + 'static>(h: T) {
-    INIT_ENV_HOOKS.push(Box::new(h))
-}
-
-pub unsafe fn init_env_clear() {
-    INIT_ENV_HOOKS.clear()
-}
-
-pub unsafe fn exit_env<T: ExitEnvHook + 'static>(h: T) {
-    EXIT_ENV_HOOKS.push(Box::new(h))
-}
-
-pub unsafe fn exit_env_clear() {
-    EXIT_ENV_HOOKS.clear()
-}
-
+// these should not be callable from the main cpu, thus shouldnt be hitable...
 #[no_mangle]
-extern "C" fn bx_instr_init_env() {
-    unsafe { INIT_ENV_HOOKS.iter_mut().for_each(|x| x()) }
-}
+extern "C" fn bx_instr_init_env() {}
 #[no_mangle]
-extern "C" fn bx_instr_exit_env() {
-    unsafe { EXIT_ENV_HOOKS.iter_mut().for_each(|x| x()) }
-}
+extern "C" fn bx_instr_exit_env() {}
+#[no_mangle]
+extern "C" fn bx_instr_initialize(_: u32) {}
+#[no_mangle]
+extern "C" fn bx_instr_exit(_: u32) {}
 
 //
-
-pub unsafe fn initialize<T: InitializeHook + 'static>(h: T) {
-    INITIALIZE_HOOKS.push(Box::new(h))
-}
-
-pub unsafe fn initialize_clear() {
-    INITIALIZE_HOOKS.clear()
-}
-
-pub unsafe fn exit<T: ExitHook + 'static>(h: T) {
-    EXIT_HOOKS.push(Box::new(h))
-}
-
-pub unsafe fn exit_clear() {
-    EXIT_HOOKS.clear()
-}
 
 pub unsafe fn reset<T: ResetHook + 'static>(h: T) {
     RESET_HOOKS.push(Box::new(h))
@@ -284,21 +246,6 @@ pub unsafe fn mwait<T: MwaitHook + 'static>(h: T) {
 pub unsafe fn mwait_clear() {
     MWAIT_HOOKS.clear()
 }
-
-#[no_mangle]
-extern "C" fn bx_instr_initialize(cpu: u32) {
-    unsafe {
-        INITIALIZE_HOOKS.iter_mut().for_each(|x| x(cpu));
-
-        // no setjmp state to restore to here...
-    }
-}
-#[no_mangle]
-extern "C" fn bx_instr_exit(cpu: u32) {
-    unsafe {
-        EXIT_HOOKS.iter_mut().for_each(|x| x(cpu));
-    }
-}
 #[no_mangle]
 extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
     unsafe {
@@ -321,7 +268,7 @@ extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
     unsafe {
         MWAIT_HOOKS
             .iter_mut()
-            .for_each(|x| x(cpu, addr, len, flags));
+            .for_each(|x| x(cpu, addr, len as usize, flags));
 
         if cpu_killbit(cpu) != 0 { cpu_bail(cpu) }
     }
@@ -774,11 +721,6 @@ extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
 }
 
 pub unsafe fn clear() {
-    init_env_clear();
-    exit_env_clear();
-
-    initialize_clear();
-    exit_clear();
     reset_clear();
     hlt_clear();
     mwait_clear();
