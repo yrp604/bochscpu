@@ -145,71 +145,39 @@ impl From<u32> for MemAccess {
     }
 }
 
-pub trait ResetHook = FnMut(u32, u32);
-pub trait HltHook = FnMut(u32);
-pub trait MwaitHook = FnMut(u32, PhyAddress, usize, u32);
+static mut RESET_HOOKS: Vec<Box<dyn FnMut(u32, u32)>> = Vec::new();
+static mut HLT_HOOKS: Vec<Box<dyn FnMut(u32)>> = Vec::new();
+static mut MWAIT_HOOKS: Vec<Box<dyn FnMut(u32, PhyAddress, usize, u32)>> = Vec::new();
 
-static mut RESET_HOOKS: Vec<Box<dyn ResetHook>> = Vec::new();
-static mut HLT_HOOKS: Vec<Box<dyn HltHook>> = Vec::new();
-static mut MWAIT_HOOKS: Vec<Box<dyn MwaitHook>> = Vec::new();
+static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<dyn FnMut(u32, Address, Address)>> = Vec::new();
+static mut CNEAR_BRANCH_NOT_TAKEN_HOOKS: Vec<Box<dyn FnMut(u32, Address)>> = Vec::new();
+static mut UCNEAR_BRANCH_HOOKS: Vec<Box<dyn FnMut(u32, Branch, Address, Address)>> = Vec::new();
+static mut FAR_BRANCH_HOOKS: Vec<Box<dyn FnMut(u32, Branch, (u16, Address), (u16, Address))>> = Vec::new();
 
-pub trait CnearBranchTakenHook = FnMut(u32, Address, Address);
-pub trait CnearBranchNotTakenHook = FnMut(u32, Address);
-pub trait UcnearBranchHook = FnMut(u32, Branch, Address, Address);
-pub trait FarBranchHook = FnMut(u32, Branch, (u16, Address), (u16, Address));
+static mut OPCODE_HOOKS: Vec<Box<dyn FnMut(u32, *mut c_void, &[u8], bool, bool)>> = Vec::new();
+static mut INTERRUPT_HOOKS: Vec<Box<dyn FnMut(u32, u32)>> = Vec::new();
+static mut EXCEPTION_HOOKS: Vec<Box<dyn FnMut(u32, u32, u32)>> = Vec::new();
+static mut HW_INTERRUPT_HOOKS: Vec<Box<dyn FnMut(u32, u32, (u16, Address))>> = Vec::new();
 
-static mut CNEAR_BRANCH_TAKEN_HOOKS: Vec<Box<dyn CnearBranchTakenHook>> = Vec::new();
-static mut CNEAR_BRANCH_NOT_TAKEN_HOOKS: Vec<Box<dyn CnearBranchNotTakenHook>> = Vec::new();
-static mut UCNEAR_BRANCH_HOOKS: Vec<Box<dyn UcnearBranchHook>> = Vec::new();
-static mut FAR_BRANCH_HOOKS: Vec<Box<dyn FarBranchHook>> = Vec::new();
+static mut TLB_CNTRL_HOOKS: Vec<Box<dyn FnMut(u32, TlbCntrl, Option<PhyAddress>)>> = Vec::new();
+static mut CACHE_CNTRL_HOOKS: Vec<Box<dyn FnMut(u32, CacheCntrl)>> = Vec::new();
+static mut PREFETCH_HINT_HOOKS: Vec<Box<dyn FnMut(u32, PrefetchHint, u32, Address)>> = Vec::new();
+static mut CLFLUSH_HOOKS: Vec<Box<dyn FnMut(u32, Address, PhyAddress)>> = Vec::new();
 
-pub trait OpcodeHook = FnMut(u32, *mut c_void, &[u8], bool, bool);
-pub trait InterruptHook = FnMut(u32, u32);
-pub trait ExceptionHook = FnMut(u32, u32, u32);
-pub trait HwInterruptHook = FnMut(u32, u32, (u16, Address));
+static mut BEFORE_EXECUTION_HOOKS: Vec<Box<dyn FnMut(u32, *mut c_void)>> = Vec::new();
+static mut AFTER_EXECUTION_HOOKS: Vec<Box<dyn FnMut(u32, *mut c_void)>> = Vec::new();
+static mut REPEAT_ITERATION_HOOKS: Vec<Box<dyn FnMut(u32, *mut c_void)>> = Vec::new();
 
-static mut OPCODE_HOOKS: Vec<Box<dyn OpcodeHook>> = Vec::new();
-static mut INTERRUPT_HOOKS: Vec<Box<dyn InterruptHook>> = Vec::new();
-static mut EXCEPTION_HOOKS: Vec<Box<dyn ExceptionHook>> = Vec::new();
-static mut HW_INTERRUPT_HOOKS: Vec<Box<dyn HwInterruptHook>> = Vec::new();
+static mut INP_HOOKS: Vec<Box<dyn FnMut(u16, usize)>> = Vec::new();
+static mut INP2_HOOKS: Vec<Box<dyn FnMut(u16, usize, u32)>> = Vec::new();
+static mut OUTP_HOOKS: Vec<Box<dyn FnMut(u16, usize, u32)>> = Vec::new();
 
-pub trait TlbCntrlHook = FnMut(u32, TlbCntrl, Option<PhyAddress>);
-pub trait CacheCntrlHook = FnMut(u32, CacheCntrl);
-pub trait PrefetchHintHook = FnMut(u32, PrefetchHint, u32, Address);
-pub trait ClflushHook = FnMut(u32, Address, PhyAddress);
+static mut LIN_ACCESS_HOOKS: Vec<Box<dyn FnMut(u32, Address, Address, usize, u32, MemAccess)>> = Vec::new();
+static mut PHY_ACCESS_HOOKS: Vec<Box<dyn FnMut(u32, Address, usize, u32, MemAccess)>> = Vec::new();
 
-static mut TLB_CNTRL_HOOKS: Vec<Box<dyn TlbCntrlHook>> = Vec::new();
-static mut CACHE_CNTRL_HOOKS: Vec<Box<dyn CacheCntrlHook>> = Vec::new();
-static mut PREFETCH_HINT_HOOKS: Vec<Box<dyn PrefetchHintHook>> = Vec::new();
-static mut CLFLUSH_HOOKS: Vec<Box<dyn ClflushHook>> = Vec::new();
+static mut WRMSR_HOOKS: Vec<Box<dyn FnMut(u32, u32, u64)>> = Vec::new();
 
-pub trait BeforeExecutionHook = FnMut(u32, *mut c_void);
-pub trait AfterExecutionHook = FnMut(u32, *mut c_void);
-pub trait RepeatIterationHook = FnMut(u32, *mut c_void);
-
-static mut BEFORE_EXECUTION_HOOKS: Vec<Box<dyn BeforeExecutionHook>> = Vec::new();
-static mut AFTER_EXECUTION_HOOKS: Vec<Box<dyn AfterExecutionHook>> = Vec::new();
-static mut REPEAT_ITERATION_HOOKS: Vec<Box<dyn RepeatIterationHook>> = Vec::new();
-
-pub trait InpHook = FnMut(u16, usize);
-pub trait Inp2Hook = FnMut(u16, usize, u32);
-pub trait OutpHook = FnMut(u16, usize, u32);
-
-static mut INP_HOOKS: Vec<Box<dyn InpHook>> = Vec::new();
-static mut INP2_HOOKS: Vec<Box<dyn Inp2Hook>> = Vec::new();
-static mut OUTP_HOOKS: Vec<Box<dyn OutpHook>> = Vec::new();
-
-pub trait LinAccessHook = FnMut(u32, Address, Address, usize, u32, MemAccess);
-pub trait PhyAccessHook = FnMut(u32, Address, usize, u32, MemAccess);
-
-static mut LIN_ACCESS_HOOKS: Vec<Box<dyn LinAccessHook>> = Vec::new();
-static mut PHY_ACCESS_HOOKS: Vec<Box<dyn PhyAccessHook>> = Vec::new();
-
-pub trait WrmsrHook = FnMut(u32, u32, u64);
-static mut WRMSR_HOOKS: Vec<Box<dyn WrmsrHook>> = Vec::new();
-
-pub trait VmexitHook = FnMut(u32, u32, u64);
-static mut VMEXIT_HOOKS: Vec<Box<dyn VmexitHook>> = Vec::new();
+static mut VMEXIT_HOOKS: Vec<Box<dyn FnMut(u32, u32, u64)>> = Vec::new();
 
 // these should not be callable from the main cpu, thus shouldnt be hitable...
 #[no_mangle]
@@ -223,7 +191,7 @@ extern "C" fn bx_instr_exit(_: u32) {}
 
 //
 
-pub unsafe fn reset<T: ResetHook + 'static>(h: T) {
+pub unsafe fn reset<T: FnMut(u32, u32) + 'static>(h: T) {
     RESET_HOOKS.push(Box::new(h))
 }
 
@@ -231,7 +199,7 @@ pub unsafe fn reset_clear() {
     RESET_HOOKS.clear()
 }
 
-pub unsafe fn hlt<T: HltHook + 'static>(h: T) {
+pub unsafe fn hlt<T: FnMut(u32) + 'static>(h: T) {
     HLT_HOOKS.push(Box::new(h))
 }
 
@@ -239,7 +207,7 @@ pub unsafe fn hlt_clear() {
     HLT_HOOKS.clear()
 }
 
-pub unsafe fn mwait<T: MwaitHook + 'static>(h: T) {
+pub unsafe fn mwait<T: FnMut(u32, PhyAddress, usize, u32) + 'static>(h: T) {
     MWAIT_HOOKS.push(Box::new(h))
 }
 
@@ -276,7 +244,7 @@ extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
 
 //
 
-pub unsafe fn cnear_branch_taken<T: CnearBranchTakenHook + 'static>(h: T) {
+pub unsafe fn cnear_branch_taken<T: FnMut(u32, Address, Address) + 'static>(h: T) {
     CNEAR_BRANCH_TAKEN_HOOKS.push(Box::new(h))
 }
 
@@ -284,7 +252,7 @@ pub unsafe fn cnear_branch_taken_clear() {
     CNEAR_BRANCH_TAKEN_HOOKS.clear()
 }
 
-pub unsafe fn cnear_branch_not_taken<T: CnearBranchNotTakenHook + 'static>(h: T) {
+pub unsafe fn cnear_branch_not_taken<T: FnMut(u32, Address) + 'static>(h: T) {
     CNEAR_BRANCH_NOT_TAKEN_HOOKS.push(Box::new(h))
 }
 
@@ -292,7 +260,7 @@ pub unsafe fn cnear_branch_not_taken_clear() {
     CNEAR_BRANCH_NOT_TAKEN_HOOKS.clear()
 }
 
-pub unsafe fn ucnear_branch<T: UcnearBranchHook + 'static>(h: T) {
+pub unsafe fn ucnear_branch<T: FnMut(u32, Branch, Address, Address) + 'static>(h: T) {
     UCNEAR_BRANCH_HOOKS.push(Box::new(h))
 }
 
@@ -300,7 +268,7 @@ pub unsafe fn ucnear_branch_clear() {
     UCNEAR_BRANCH_HOOKS.clear()
 }
 
-pub unsafe fn far_branch<T: FarBranchHook + 'static>(h: T) {
+pub unsafe fn far_branch<T: FnMut(u32, Branch, (u16, Address), (u16, Address)) + 'static>(h: T) {
     FAR_BRANCH_HOOKS.push(Box::new(h))
 }
 
@@ -356,7 +324,7 @@ extern "C" fn bx_instr_far_branch(
     }
 }
 
-pub unsafe fn opcode<T: OpcodeHook + 'static>(h: T) {
+pub unsafe fn opcode<T: FnMut(u32, *mut c_void, &[u8], bool, bool) + 'static>(h: T) {
     OPCODE_HOOKS.push(Box::new(h))
 }
 
@@ -364,7 +332,7 @@ pub unsafe fn opcode_clear() {
     OPCODE_HOOKS.clear()
 }
 
-pub unsafe fn interrupt<T: InterruptHook + 'static>(h: T) {
+pub unsafe fn interrupt<T: FnMut(u32, u32) + 'static>(h: T) {
     INTERRUPT_HOOKS.push(Box::new(h))
 }
 
@@ -372,7 +340,7 @@ pub unsafe fn interrupt_clear() {
     INTERRUPT_HOOKS.clear()
 }
 
-pub unsafe fn exception<T: ExceptionHook + 'static>(h: T) {
+pub unsafe fn exception<T: FnMut(u32, u32, u32) + 'static>(h: T) {
     EXCEPTION_HOOKS.push(Box::new(h))
 }
 
@@ -380,7 +348,7 @@ pub unsafe fn exception_clear() {
     EXCEPTION_HOOKS.clear()
 }
 
-pub unsafe fn hw_interrupt<T: HwInterruptHook + 'static>(h: T) {
+pub unsafe fn hw_interrupt<T: FnMut(u32, u32, (u16, Address)) + 'static>(h: T) {
     HW_INTERRUPT_HOOKS.push(Box::new(h))
 }
 
@@ -443,7 +411,7 @@ extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: Address)
 
 //
 
-pub unsafe fn tlb_cntrl<T: TlbCntrlHook + 'static>(h: T) {
+pub unsafe fn tlb_cntrl<T: FnMut(u32, TlbCntrl, Option<PhyAddress>) + 'static>(h: T) {
     TLB_CNTRL_HOOKS.push(Box::new(h))
 }
 
@@ -451,7 +419,7 @@ pub unsafe fn tlb_cntrl_clear() {
     TLB_CNTRL_HOOKS.clear()
 }
 
-pub unsafe fn cache_cntrl<T: CacheCntrlHook + 'static>(h: T) {
+pub unsafe fn cache_cntrl<T: FnMut(u32, CacheCntrl) + 'static>(h: T) {
     CACHE_CNTRL_HOOKS.push(Box::new(h))
 }
 
@@ -459,7 +427,7 @@ pub unsafe fn cache_cntrl_clear() {
     CACHE_CNTRL_HOOKS.clear()
 }
 
-pub unsafe fn prefetch_hint<T: PrefetchHintHook + 'static>(h: T) {
+pub unsafe fn prefetch_hint<T: FnMut(u32, PrefetchHint, u32, Address) + 'static>(h: T) {
     PREFETCH_HINT_HOOKS.push(Box::new(h))
 }
 
@@ -467,7 +435,7 @@ pub unsafe fn prefetch_hint_clear() {
     PREFETCH_HINT_HOOKS.clear()
 }
 
-pub unsafe fn clflush<T: ClflushHook + 'static>(h: T) {
+pub unsafe fn clflush<T: FnMut(u32, Address, PhyAddress) + 'static>(h: T) {
     CLFLUSH_HOOKS.push(Box::new(h))
 }
 
@@ -532,7 +500,7 @@ extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
 /// table. In that case, this hook execute then will generate a #PF. The
 /// emulator could service that #PF, and then return to the `push` and execute
 /// the hook again.
-pub unsafe fn before_execution<T: BeforeExecutionHook + 'static>(h: T) {
+pub unsafe fn before_execution<T: FnMut(u32, *mut c_void) + 'static>(h: T) {
     BEFORE_EXECUTION_HOOKS.push(Box::new(h))
 }
 
@@ -540,7 +508,7 @@ pub unsafe fn before_execution_clear() {
     BEFORE_EXECUTION_HOOKS.clear()
 }
 
-pub unsafe fn after_execution<T: AfterExecutionHook + 'static>(h: T) {
+pub unsafe fn after_execution<T: FnMut(u32, *mut c_void) + 'static>(h: T) {
     AFTER_EXECUTION_HOOKS.push(Box::new(h))
 }
 
@@ -548,7 +516,7 @@ pub unsafe fn after_execution_clear() {
     AFTER_EXECUTION_HOOKS.clear()
 }
 
-pub unsafe fn repeat_iteration<T: RepeatIterationHook + 'static>(h: T) {
+pub unsafe fn repeat_iteration<T: FnMut(u32, *mut c_void) + 'static>(h: T) {
     REPEAT_ITERATION_HOOKS.push(Box::new(h))
 }
 
@@ -583,7 +551,7 @@ extern "C" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
 
 //
 
-pub unsafe fn inp<T: InpHook + 'static>(h: T) {
+pub unsafe fn inp<T: FnMut(u16, usize) + 'static>(h: T) {
     INP_HOOKS.push(Box::new(h))
 }
 
@@ -591,7 +559,7 @@ pub unsafe fn inp_clear() {
     INP_HOOKS.clear()
 }
 
-pub unsafe fn inp2<T: Inp2Hook + 'static>(h: T) {
+pub unsafe fn inp2<T: FnMut(u16, usize, u32) + 'static>(h: T) {
     INP2_HOOKS.push(Box::new(h))
 }
 
@@ -599,7 +567,7 @@ pub unsafe fn inp2_clear() {
     INP2_HOOKS.clear()
 }
 
-pub unsafe fn outp<T: OutpHook + 'static>(h: T) {
+pub unsafe fn outp<T: FnMut(u16, usize, u32) + 'static>(h: T) {
     OUTP_HOOKS.push(Box::new(h))
 }
 
@@ -635,7 +603,7 @@ extern "C" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
 
 //
 
-pub unsafe fn lin_access<T: LinAccessHook + 'static>(h: T) {
+pub unsafe fn lin_access<T: FnMut(u32, Address, Address, usize, u32, MemAccess) + 'static>(h: T) {
     LIN_ACCESS_HOOKS.push(Box::new(h))
 }
 
@@ -643,7 +611,7 @@ pub unsafe fn lin_access_clear() {
     LIN_ACCESS_HOOKS.clear()
 }
 
-pub unsafe fn phy_access<T: PhyAccessHook + 'static>(h: T) {
+pub unsafe fn phy_access<T: FnMut(u32, Address, usize, u32, MemAccess) + 'static>(h: T) {
     PHY_ACCESS_HOOKS.push(Box::new(h))
 }
 
@@ -682,7 +650,7 @@ extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memtype: u32
 
 //
 
-pub unsafe fn wrmsr<T: WrmsrHook + 'static>(h: T) {
+pub unsafe fn wrmsr<T: FnMut(u32, u32, u64) + 'static>(h: T) {
     WRMSR_HOOKS.push(Box::new(h))
 }
 
@@ -701,7 +669,7 @@ extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
 
 //
 
-pub unsafe fn vmexit<T: VmexitHook + 'static>(h: T) {
+pub unsafe fn vmexit<T: FnMut(u32, u32, u64) + 'static>(h: T) {
     VMEXIT_HOOKS.push(Box::new(h))
 }
 
