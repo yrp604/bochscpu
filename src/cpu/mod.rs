@@ -1,6 +1,5 @@
 use std::convert::TryInto;
 
-use blake2::{Blake2b, Digest};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -255,14 +254,14 @@ unsafe fn set_seed(id: u32, seed: u64) {
 #[no_mangle]
 extern "C" fn bochscpu_rand(id: u32) -> u64 {
     let seed = unsafe { seed(id) };
-    let d = Blake2b::digest(&seed.to_le_bytes());
+    let hash = blake3::hash(&seed.to_le_bytes());
 
     // set the seed from the low 64 bits
-    let new_seed = u64::from_le_bytes(d[0..8].try_into().unwrap());
+    let new_seed = u64::from_le_bytes(hash.as_bytes()[0..8].try_into().unwrap());
     unsafe { set_seed(id, new_seed) };
 
-    // return the next 32 bits as entropy
-    u64::from_le_bytes(d[8..16].try_into().unwrap())
+    // return the next 64 bits as entropy
+    u64::from_le_bytes(hash.as_bytes()[8..16].try_into().unwrap())
 }
 
 pub struct Cpu {
