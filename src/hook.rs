@@ -205,13 +205,13 @@ unsafe fn hooks() -> &'static mut Vec<&'static mut dyn Hooks> {
     &mut *(HOOKS.0.get())
 }
 
-pub(crate) unsafe fn register_hooks<'a>(h: &'a mut dyn Hooks) {
+pub(crate) unsafe fn register<'a>(h: &'a mut dyn Hooks) {
     // we need to extend the lifetime of this hook object to 'static so we can insert it
     let hook = mem::transmute::<&'a mut dyn Hooks, &'static mut dyn Hooks>(h);
     hooks().push(hook);
 }
 
-pub(crate) unsafe fn clear_hooks() {
+pub(crate) unsafe fn clear() {
     hooks().clear();
 }
 
