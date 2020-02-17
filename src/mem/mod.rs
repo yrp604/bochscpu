@@ -12,7 +12,7 @@ pub use virt::*;
 // despite all the benchmarks claiming that fxhash + hashbrown wins, for our
 // benchmarks fnvhash + hashbrown seems to be the winning combo
 mod fastmap64_mem;
-pub use fastmap64_mem::{add_page, del_page};
+pub use fastmap64_mem::{page_insert, page_remove};
 use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
 #[ctor]
