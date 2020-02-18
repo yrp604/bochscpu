@@ -3,6 +3,7 @@ use std::convert::TryInto;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::hook::{self, Hooks};
 use crate::syncunsafecell::SyncUnsafeCell;
 use crate::{Address, PhyAddress, NUM_CPUS};
 
@@ -300,6 +301,12 @@ impl Cpu {
         cpu_delete(self.handle);
     }
 
+    pub unsafe fn with_hook(&self, hook: &mut dyn Hooks) -> &Self {
+        hook::register(hook);
+
+        self
+    }
+
     pub unsafe fn run(&self) -> RunState {
         self.set_run_state(RunState::Go);
 
@@ -309,6 +316,8 @@ impl Cpu {
                 RunState::Go => cpu_loop(self.handle),
             }
         }
+
+        hook::clear();
 
         self.run_state()
     }
