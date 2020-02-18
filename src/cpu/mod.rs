@@ -223,7 +223,10 @@ struct Tracking {
 
 impl Default for Tracking {
     fn default() -> Self {
-        Self { seed: 0, state: RunState::Stop }
+        Self {
+            seed: 0,
+            state: RunState::Stop,
+        }
     }
 }
 
