@@ -267,17 +267,26 @@ extern "C" fn bochscpu_rand(id: u32) -> u64 {
     u64::from_le_bytes(hash.as_bytes()[8..16].try_into().unwrap())
 }
 
-pub struct CpuHooks<'a> {
+pub struct CpuRun<'a> {
     cpu: &'a Cpu
 }
 
-impl<'a> CpuHooks<'a> {
+impl<'a> CpuRun<'a> {
     pub fn new(cpu: &'a Cpu) -> Self {
         Self { cpu }
     }
 
     pub unsafe fn run(self) -> RunState {
-        self.cpu.run()
+        self.cpu.set_run_state(RunState::Go);
+
+        while cpu_killbit(self.cpu.handle) == 0 {
+            match run_state(self.cpu.handle) {
+                RunState::Stop => break,
+                RunState::Go => cpu_loop(self.cpu.handle),
+            }
+        }
+
+        self.cpu.run_state()
     }
 
     pub unsafe fn register(self, hook: &mut dyn Hooks) -> Self {
@@ -287,7 +296,7 @@ impl<'a> CpuHooks<'a> {
     }
 }
 
-impl<'a> Drop for CpuHooks<'a> {
+impl<'a> Drop for CpuRun<'a> {
     fn drop(&mut self) {
         unsafe { hook::clear() };
     }
@@ -330,23 +339,8 @@ impl Cpu {
         cpu_delete(self.handle);
     }
 
-    pub unsafe fn with_hooks(&self) -> CpuHooks {
-        CpuHooks::new(self)
-    }
-
-    pub unsafe fn run(&self) -> RunState {
-        self.set_run_state(RunState::Go);
-
-        while cpu_killbit(self.handle) == 0 {
-            match run_state(self.handle) {
-                RunState::Stop => break,
-                RunState::Go => cpu_loop(self.handle),
-            }
-        }
-
-        hook::clear();
-
-        self.run_state()
+    pub unsafe fn prepare(&self) -> CpuRun {
+        CpuRun::new(self)
     }
 
     pub unsafe fn run_state(&self) -> RunState {
