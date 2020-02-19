@@ -267,6 +267,32 @@ extern "C" fn bochscpu_rand(id: u32) -> u64 {
     u64::from_le_bytes(hash.as_bytes()[8..16].try_into().unwrap())
 }
 
+pub struct CpuHooks<'a> {
+    cpu: &'a Cpu
+}
+
+impl<'a> CpuHooks<'a> {
+    pub fn new(cpu: &'a Cpu) -> Self {
+        Self { cpu }
+    }
+
+    pub unsafe fn run(self) -> RunState {
+        self.cpu.run()
+    }
+
+    pub unsafe fn register(self, hook: &mut dyn Hooks) -> Self {
+        hook::register(hook);
+
+        self
+    }
+}
+
+impl<'a> Drop for CpuHooks<'a> {
+    fn drop(&mut self) {
+        unsafe { hook::clear() };
+    }
+}
+
 pub struct Cpu {
     handle: u32,
 }
@@ -304,10 +330,8 @@ impl Cpu {
         cpu_delete(self.handle);
     }
 
-    pub unsafe fn with_hook(&self, hook: &mut dyn Hooks) -> &Self {
-        hook::register(hook);
-
-        self
+    pub unsafe fn with_hooks(&self) -> CpuHooks {
+        CpuHooks::new(self)
     }
 
     pub unsafe fn run(&self) -> RunState {
