@@ -1,9 +1,9 @@
 use std::convert::TryInto;
 
-use blake2::{Blake2b, Digest};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::hook::{self, Hooks};
 use crate::syncunsafecell::SyncUnsafeCell;
 use crate::{Address, PhyAddress, NUM_CPUS};
 
@@ -186,20 +186,20 @@ enum DRegs {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Zmm {
     pub q: [u64; 8],
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GlobalSeg {
     pub base: Address,
     pub limit: u16,
 }
 
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Seg {
     pub present: bool,
@@ -223,7 +223,10 @@ struct Tracking {
 
 impl Default for Tracking {
     fn default() -> Self {
-        Self { seed: 0, state: RunState::Stop }
+        Self {
+            seed: 0,
+            state: RunState::Stop,
+        }
     }
 }
 
@@ -254,14 +257,49 @@ unsafe fn set_seed(id: u32, seed: u64) {
 #[no_mangle]
 extern "C" fn bochscpu_rand(id: u32) -> u64 {
     let seed = unsafe { seed(id) };
-    let d = Blake2b::digest(&seed.to_le_bytes());
+    let hash = blake3::hash(&seed.to_le_bytes());
 
     // set the seed from the low 64 bits
-    let new_seed = u64::from_le_bytes(d[0..8].try_into().unwrap());
+    let new_seed = u64::from_le_bytes(hash.as_bytes()[0..8].try_into().unwrap());
     unsafe { set_seed(id, new_seed) };
 
-    // return the next 32 bits as entropy
-    u64::from_le_bytes(d[8..16].try_into().unwrap())
+    // return the next 64 bits as entropy
+    u64::from_le_bytes(hash.as_bytes()[8..16].try_into().unwrap())
+}
+
+pub struct CpuRun<'a> {
+    cpu: &'a Cpu
+}
+
+impl<'a> CpuRun<'a> {
+    pub fn new(cpu: &'a Cpu) -> Self {
+        Self { cpu }
+    }
+
+    pub unsafe fn run(self) -> RunState {
+        self.cpu.set_run_state(RunState::Go);
+
+        while cpu_killbit(self.cpu.handle) == 0 {
+            match run_state(self.cpu.handle) {
+                RunState::Stop => break,
+                RunState::Go => cpu_loop(self.cpu.handle),
+            }
+        }
+
+        self.cpu.run_state()
+    }
+
+    pub unsafe fn register(self, hook: &mut dyn Hooks) -> Self {
+        hook::register(hook);
+
+        self
+    }
+}
+
+impl<'a> Drop for CpuRun<'a> {
+    fn drop(&mut self) {
+        unsafe { hook::clear() };
+    }
 }
 
 pub struct Cpu {
@@ -301,17 +339,8 @@ impl Cpu {
         cpu_delete(self.handle);
     }
 
-    pub unsafe fn run(&self) -> RunState {
-        self.set_run_state(RunState::Go);
-
-        while cpu_killbit(self.handle) == 0 {
-            match run_state(self.handle) {
-                RunState::Stop => break,
-                RunState::Go => cpu_loop(self.handle),
-            }
-        }
-
-        self.run_state()
+    pub unsafe fn prepare(&self) -> CpuRun {
+        CpuRun::new(self)
     }
 
     pub unsafe fn run_state(&self) -> RunState {
