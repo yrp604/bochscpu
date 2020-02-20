@@ -185,9 +185,9 @@ enum DRegs {
     Dr3 = 3,
 }
 
-#[repr(C)]
 #[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(C)]
 pub struct Zmm {
     pub q: [u64; 8],
 }
