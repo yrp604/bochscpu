@@ -5,6 +5,7 @@ use crate::cpu::{GlobalSeg, Seg, Zmm};
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(C)]
 pub struct State {
     pub bochscpu_seed: u64,
 

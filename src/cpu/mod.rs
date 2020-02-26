@@ -194,6 +194,7 @@ pub struct Zmm {
 
 #[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(C)]
 pub struct GlobalSeg {
     pub base: Address,
     pub limit: u16,
@@ -201,6 +202,7 @@ pub struct GlobalSeg {
 
 #[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(C)]
 pub struct Seg {
     pub present: bool,
     pub selector: u16,
