@@ -50,5 +50,6 @@ extern "C" fn logfunctions_panic(p: *const c_char) {
         CStr::from_ptr(p).to_str().unwrap()
     };
 
-    panic!("{}", s);
+    println!("{}", s);
+    process::exit(1);
 }

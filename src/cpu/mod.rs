@@ -548,7 +548,7 @@ impl Cpu {
         self.set_rflags(s.rflags);
 
         self.set_es(s.es);
-        self.set_cs(s.cs);
+        self.set_cs_raw(s.cs);
         self.set_ss(s.ss);
         self.set_ds(s.ds);
         self.set_fs(s.fs);
@@ -601,6 +601,9 @@ impl Cpu {
         for (ii, f) in (&s.fpst).iter().enumerate() {
             self.set_fp_st(ii, *f);
         }
+
+        // because we used set_cs_raw we need to update the state manually.
+        self.set_mode();
     }
 
     //
@@ -808,6 +811,13 @@ impl Cpu {
     pub unsafe fn set_cs(&self, v: Seg) {
         self.set_seg(SegRegs::Cs, v);
         self.set_mode();
+    }
+
+    /// This function does not update the cpu mode after setting CS. This is
+    /// needed as during cpu init, if efer isn't yet populated the cpu will not
+    /// know that long mode might be active and change the state.
+    pub unsafe fn set_cs_raw(&self, v: Seg) {
+        self.set_seg(SegRegs::Cs, v);
     }
 
     pub unsafe fn ss(&self) -> Seg {
