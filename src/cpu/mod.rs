@@ -237,15 +237,15 @@ impl Default for Tracking {
 static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
     { SyncUnsafeCell::new(vec![Tracking::default(); NUM_CPUS]) };
 
-pub(crate) unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
+unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
     &mut (*(CPU_TRACKING.0.get()))[id as usize]
 }
 
-unsafe fn run_state(id: u32) -> RunState {
+pub(crate) unsafe fn run_state(id: u32) -> RunState {
     cpu_tracking(id).state
 }
 
-unsafe fn set_run_state(id: u32, rs: RunState) {
+pub(crate) unsafe fn set_run_state(id: u32, rs: RunState) {
     cpu_tracking(id).state = rs;
 }
 
