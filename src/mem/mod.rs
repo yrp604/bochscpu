@@ -13,7 +13,8 @@ pub use virt::*;
 // despite all the benchmarks claiming that fxhash + hashbrown wins, for our
 // benchmarks fnvhash + hashbrown seems to be the winning combo
 mod fastmap64_mem;
-pub use fastmap64_mem::{page_insert, page_remove};
+use fastmap64_mem::page_insert as mem_insert;
+pub use fastmap64_mem::page_remove;
 use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
 #[ctor]
@@ -27,6 +28,12 @@ const fn page_off(a: PhyAddress) -> (PhyAddress, usize) {
 pub unsafe fn fault(gpa: PhyAddress) {
     let f = FAULT.0.get();
     (**f)(gpa);
+}
+
+pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) {
+    assert_eq!(hva.align_offset(0x1000), 0);
+
+    mem_insert(gpa, hva)
 }
 
 #[no_mangle]

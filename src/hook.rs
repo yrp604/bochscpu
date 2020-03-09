@@ -3,7 +3,7 @@ use std::hint::unreachable_unchecked;
 use std::mem;
 use std::slice;
 
-use crate::cpu::{cpu_bail, cpu_killbit};
+use crate::cpu::{RunState, cpu_bail, cpu_tracking};
 use crate::syncunsafecell::SyncUnsafeCell;
 use crate::{Address, PhyAddress};
 
@@ -256,7 +256,7 @@ unsafe extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
     hooks().iter_mut().for_each(|x| x.reset(cpu, ty));
 
     // avoid the overhead of calling Cpu::from and just check the raw flags
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -265,7 +265,7 @@ unsafe extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
 unsafe extern "C" fn bx_instr_hlt(cpu: u32) {
     hooks().iter_mut().for_each(|x| x.hlt(cpu));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -276,7 +276,7 @@ unsafe extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags:
         .iter_mut()
         .for_each(|x| x.mwait(cpu, addr, len as usize, flags));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -287,7 +287,7 @@ unsafe extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, 
         .iter_mut()
         .for_each(|x| x.cnear_branch_taken(cpu, branch_eip, new_eip));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -297,7 +297,7 @@ unsafe extern "C" fn bx_instr_cnear_branch_not_taken(cpu: u32, branch_eip: Addre
         .iter_mut()
         .for_each(|x| x.cnear_branch_not_taken(cpu, branch_eip));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -312,7 +312,7 @@ unsafe extern "C" fn bx_instr_ucnear_branch(
         .iter_mut()
         .for_each(|x| x.ucnear_branch(cpu, what.into(), branch_eip, new_eip));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -329,7 +329,7 @@ unsafe extern "C" fn bx_instr_far_branch(
         .iter_mut()
         .for_each(|x| x.far_branch(cpu, what.into(), (prev_cs, prev_eip), (new_cs, new_eip)));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -353,7 +353,7 @@ unsafe extern "C" fn bx_instr_opcode(
         )
     });
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -362,7 +362,7 @@ unsafe extern "C" fn bx_instr_opcode(
 unsafe extern "C" fn bx_instr_interrupt(cpu: u32, vector: u32) {
     hooks().iter_mut().for_each(|x| x.interrupt(cpu, vector));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -373,7 +373,7 @@ unsafe extern "C" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) 
         .iter_mut()
         .for_each(|x| x.exception(cpu, vector, error_code));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -383,7 +383,7 @@ unsafe extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: A
         .iter_mut()
         .for_each(|x| x.hw_interrupt(cpu, vector, (cs, eip)));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -404,7 +404,7 @@ extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
             .iter_mut()
             .for_each(|x| x.tlb_cntrl(cpu, ty, maybe_cr3));
 
-        if cpu_killbit(cpu) != 0 {
+        if cpu_tracking(cpu).state != RunState::Go {
             cpu_bail(cpu)
         }
     }
@@ -416,7 +416,7 @@ unsafe extern "C" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
         .iter_mut()
         .for_each(|x| x.cache_cntrl(cpu, what.into()));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -427,7 +427,7 @@ unsafe extern "C" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offse
         .iter_mut()
         .for_each(|x| x.prefetch_hint(cpu, what.into(), seg, offset));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -438,7 +438,7 @@ unsafe extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddres
         .iter_mut()
         .for_each(|x| x.clflush(cpu, laddr, paddr));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -447,7 +447,7 @@ unsafe extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddres
 unsafe extern "C" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
     hooks().iter_mut().for_each(|x| x.before_execution(cpu, i));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -455,7 +455,7 @@ unsafe extern "C" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
 unsafe extern "C" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
     hooks().iter_mut().for_each(|x| x.after_execution(cpu, i));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -464,7 +464,7 @@ unsafe extern "C" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
 unsafe extern "C" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
     hooks().iter_mut().for_each(|x| x.repeat_iteration(cpu, i));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -482,7 +482,7 @@ unsafe extern "C" fn bx_instr_lin_access(
         .iter_mut()
         .for_each(|x| x.lin_access(cpu, lin, phy, len as usize, memtype.into(), rw.into()));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -493,7 +493,7 @@ unsafe extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memty
         .iter_mut()
         .for_each(|x| x.phy_access(cpu, phy, len as usize, memtype.into(), rw.into()));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -519,7 +519,7 @@ unsafe extern "C" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
 unsafe extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
     hooks().iter_mut().for_each(|x| x.wrmsr(cpu, addr, value));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }
@@ -530,7 +530,7 @@ unsafe extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) 
         .iter_mut()
         .for_each(|x| x.vmexit(cpu, reason, qualification));
 
-    if cpu_killbit(cpu) != 0 {
+    if cpu_tracking(cpu).state != RunState::Go {
         cpu_bail(cpu)
     }
 }

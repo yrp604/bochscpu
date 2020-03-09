@@ -32,8 +32,6 @@ pub unsafe fn resolve_hva_checked(gpa: PhyAddress) -> Option<*mut u8> {
 }
 
 pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) {
-    assert_eq!(hva.align_offset(0x1000), 0);
-
     let (page, _) = page_off(gpa);
     mem().insert(page, hva);
 }

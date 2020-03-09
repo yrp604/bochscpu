@@ -215,12 +215,13 @@ pub struct Seg {
 pub enum RunState {
     Go,
     Stop,
+    Bail,
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
-struct Tracking {
+pub(crate) struct Tracking {
     seed: u64,
-    state: RunState,
+    pub(crate) state: RunState,
 }
 
 impl Default for Tracking {
@@ -236,7 +237,7 @@ impl Default for Tracking {
 static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
     { SyncUnsafeCell::new(vec![Tracking::default(); NUM_CPUS]) };
 
-unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
+pub(crate) unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
     &mut (*(CPU_TRACKING.0.get()))[id as usize]
 }
 
@@ -284,7 +285,7 @@ impl<'a> CpuRun<'a> {
         while cpu_killbit(self.cpu.handle) == 0 {
             match run_state(self.cpu.handle) {
                 RunState::Stop => break,
-                RunState::Go => cpu_loop(self.cpu.handle),
+                _ => cpu_loop(self.cpu.handle),
             }
         }
 
@@ -353,8 +354,8 @@ impl Cpu {
         set_run_state(self.handle, rs);
 
         match rs {
-            RunState::Go => cpu_clear_killbit(self.handle),
             RunState::Stop => cpu_set_killbit(self.handle),
+            _ => cpu_clear_killbit(self.handle),
         };
     }
 
