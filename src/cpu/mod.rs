@@ -619,6 +619,8 @@ impl Cpu {
 
     pub unsafe fn set_rip(&self, v: u64) {
         cpu_set_pc(self.handle, v);
+
+        self.set_run_state(RunState::Bail);
     }
 
     pub unsafe fn rax(&self) -> u64 {
