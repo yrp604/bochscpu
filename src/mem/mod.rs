@@ -17,6 +17,10 @@ use fastmap64_mem::page_insert as mem_insert;
 pub use fastmap64_mem::page_remove;
 use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
+pub const fn phy_mask(gpa: PhyAddress) -> PhyAddress {
+    gpa & 0x000f_ffff_ffff_ffff
+}
+
 #[ctor]
 static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> =
     { SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set"))) };
@@ -100,7 +104,7 @@ pub unsafe fn guest_phy_translate(cpu: u32, gpa: PhyAddress) -> *mut u8 {
 pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8 {
     // i think this is needed because bochs will call into this with high bits
     // set?
-    let real_gpa = gpa & 0x000f_ffff_ffff_ffff;
+    let real_gpa = phy_mask(gpa);
 
     if let Some(hva) = resolve_hva_checked(real_gpa) {
         return hva;

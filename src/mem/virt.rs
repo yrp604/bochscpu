@@ -3,7 +3,7 @@ use std::fmt;
 use std::iter;
 use std::mem;
 
-use crate::mem::{phy_read_slice, phy_read_u64, phy_write};
+use crate::mem::{phy_mask, phy_read_slice, phy_read_u64, phy_write};
 use crate::{Address, PhyAddress};
 
 const fn pml4_index(gva: Address) -> u64 {
@@ -23,11 +23,11 @@ const fn pt_index(gva: Address) -> u64 {
 }
 
 const fn base_flags(gpa: Address) -> (Address, u64) {
-    (gpa & !0xfff & 0x000f_ffff_ffff_ffff, gpa & 0x1ff)
+    (phy_mask(gpa) & !0xfff, gpa & 0x1ff)
 }
 
 const fn pte_flags(pte: Address) -> (PhyAddress, u64) {
-    (pte & !0xfff & 0x000f_ffff_ffff_ffff, pte & 0xfff)
+    (phy_mask(pte) & !0xfff, pte & 0xfff)
 }
 
 const fn page_offset(gva: Address) -> u64 {
@@ -208,7 +208,7 @@ pub fn virt_translate_checked(cr3: PhyAddress, gva: Address) -> Result<PhyAddres
     // 7 (PS) - Page size; must be 1 (otherwise, this entry references a page
     // directory; see Table 4-1
     if pdpte_flags & 1 << 7 != 0 {
-        return Ok((pdpte & 0xffff_ffff_c000_0000) + (gva & 0x3fff_ffff));
+        return Ok((pd_base & 0xffff_ffff_c000_0000) + (gva & 0x3fff_ffff));
     }
 
     let pde_addr = pd_base + pd_index(gva) * 8;
@@ -224,13 +224,17 @@ pub fn virt_translate_checked(cr3: PhyAddress, gva: Address) -> Result<PhyAddres
     // 7 (PS) - Page size; must be 1 (otherwise, this entry references a page
     // table; see Table 4-18
     if pde_flags & 1 << 7 != 0 {
-        return Ok((pde & 0xffff_ffff_ffe0_0000) + (gva & 0x1f_ffff));
+        return Ok((pt_base & 0xffff_ffff_ffe0_0000) + (gva & 0x1f_ffff));
     }
 
     let pte_addr = pt_base + pt_index(gva) * 8;
     let pte = phy_read_u64(pte_addr);
 
     let (pte_paddr, pte_flags) = pte_flags(pte);
+
+    if pte_paddr >> 63 != 0 {
+        println!("wtf: {:x}", pte_paddr);
+    }
 
     if pte_flags & 1 == 0 {
         return Err(VirtMemError::PteNotPresent);
