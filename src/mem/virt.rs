@@ -232,10 +232,6 @@ pub fn virt_translate_checked(cr3: PhyAddress, gva: Address) -> Result<PhyAddres
 
     let (pte_paddr, pte_flags) = pte_flags(pte);
 
-    if pte_paddr >> 63 != 0 {
-        println!("wtf: {:x}", pte_paddr);
-    }
-
     if pte_flags & 1 == 0 {
         return Err(VirtMemError::PteNotPresent);
     }
