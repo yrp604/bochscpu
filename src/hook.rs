@@ -9,6 +9,24 @@ use crate::{Address, PhyAddress};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 #[repr(u32)]
+pub enum ResetSource {
+    Software = 10,
+    Hardware = 11,
+}
+
+impl From<u32> for ResetSource {
+    fn from(i: u32) -> Self {
+        match i {
+            10 => ResetSource::Software,
+            11 => ResetSource::Hardware,
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+}
+
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
 pub enum Branch {
     Jmp = 10,
     JmpIndirect = 11,
@@ -164,7 +182,7 @@ impl From<u32> for MemType {
 }
 
 pub trait Hooks {
-    fn reset(&mut self, _id: u32, _ty: u32) {}
+    fn reset(&mut self, _id: u32, _ty: ResetSource) {}
     fn hlt(&mut self, _id: u32) {}
     fn mwait(&mut self, _id: u32, _addr: PhyAddress, _len: usize, _flags: u32) {}
 
@@ -253,7 +271,15 @@ extern "C" fn bx_instr_exit(_: u32) {}
 
 #[no_mangle]
 unsafe extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
-    hooks().iter_mut().for_each(|x| x.reset(cpu, ty));
+    let src: ResetSource = ty.into();
+
+    // this is kind of awkward -- we call reset during cpu init to initialize
+    // parts of it, but the cpu is half-initialized when this callback gets
+    // fired, so this crashes. We're going to assume that we're the only ones
+    // that can do hardware resets, and only call hooks for software resets
+    if src == ResetSource::Hardware { return; }
+
+    hooks().iter_mut().for_each(|x| x.reset(cpu, src));
 
     // avoid the overhead of calling Cpu::from and just check the raw flags
     if run_state(cpu) != RunState::Go {

@@ -20,11 +20,11 @@ BOCHSAPI void cpu_new(unsigned id) {
 
     BX_CPU_C *c = new (zero) BX_CPU_C(id);
 
-
     BX_CPU(id) = c;
 #endif
 
     BX_CPU(id)->initialize();
+    BX_CPU(id)->reset(BX_RESET_HARDWARE);
     BX_CPU(id)->sanity_checks();
 
     BX_INSTR_INITIALIZE(id);
