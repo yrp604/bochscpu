@@ -527,6 +527,10 @@ BOCHSAPI void cpu_clear_killbit(unsigned id) {
     BX_CPU(id)->async_event = 0;
     bx_pc_system.kill_bochs_request = 0;
 }
+
+BOCHSAPI void cpu_exception(unsigned id, unsigned vector, Bit16u error) {
+    BX_CPU(id)->exception(vector, error);
+}
 }
 
 Bit8u bx_cpu_count = 0xff; // max number of processsors
