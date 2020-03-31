@@ -147,7 +147,7 @@ extern "C" {
     pub(crate) fn cpu_killbit(id: u32) -> u32;
     fn cpu_set_killbit(id: u32);
     fn cpu_clear_killbit(id: u32);
-    fn cpu_exception(id: u32, vector: u32, error: u16);
+    fn cpu_exception(id: u32, vector: u32, error: u16) -> !;
 }
 
 enum GpRegs {
@@ -608,7 +608,7 @@ impl Cpu {
         self.set_mode();
     }
 
-    pub unsafe fn exception(&self, vector: u32, error: u16) {
+    pub unsafe fn exception(&self, vector: u32, error: u16) -> ! {
         cpu_exception(self.handle, vector, error)
     }
 
