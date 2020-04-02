@@ -187,7 +187,7 @@ pub trait Hooks {
     fn mwait(&mut self, _id: u32, _addr: PhyAddress, _len: usize, _flags: u32) {}
 
     fn cnear_branch_taken(&mut self, _id: u32, _branch_pc: Address, _new_pc: Address) {}
-    fn cnear_branch_not_taken(&mut self, _id: u32, _pc: Address) {}
+    fn cnear_branch_not_taken(&mut self, _id: u32, _pc: Address, _new_pc: Address) {}
     fn ucnear_branch(&mut self, _id: u32, _what: Branch, _branch_pc: Address, _new_pc: Address) {}
     fn far_branch(
         &mut self,
@@ -322,10 +322,10 @@ unsafe extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, 
     }
 }
 #[no_mangle]
-unsafe extern "C" fn bx_instr_cnear_branch_not_taken(cpu: u32, branch_eip: Address) {
+unsafe extern "C" fn bx_instr_cnear_branch_not_taken(cpu: u32, branch_eip: Address, new_eip: Address) {
     hooks()
         .iter_mut()
-        .for_each(|x| x.cnear_branch_not_taken(cpu, branch_eip));
+        .for_each(|x| x.cnear_branch_not_taken(cpu, branch_eip, new_eip));
 
     if run_state(cpu) != RunState::Go {
         if run_state(cpu) == RunState::Bail { set_run_state(cpu, RunState::Go); }
