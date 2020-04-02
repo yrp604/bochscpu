@@ -42,6 +42,24 @@ fn main() {
         .compile("mem-cabi");
     println!("cargo:rustc-link-lib=static=mem-cabi");
 
+    #[cfg(not(target_os = "windows"))]
+    cc::Build::new()
+        .cpp(true)
+        .flag_if_supported("-Wno-unused-parameter")
+        .include(Path::new("bochs"))
+        .include(Path::new("bochs/instrument/bochscpu"))
+        .file("cabi/instr-cabi.cc")
+        .compile("instr-cabi");
+    #[cfg(target_os = "windows")]
+    cc::Build::new()
+        .cpp(true)
+        .define("WIN32", None)
+        .include(Path::new("bochs"))
+        .include(Path::new("bochs/instrument/bochscpu"))
+        .file("cabi/instr-cabi.cc")
+        .compile("instr-cabi");
+    println!("cargo:rustc-link-lib=static=instr-cabi");
+
     match env::var("PROFILE").unwrap().as_ref() {
         "release" => {
             #[cfg(not(target_os = "windows"))]
