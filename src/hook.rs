@@ -198,7 +198,7 @@ pub trait Hooks {
     ) {
     }
 
-    fn opcode(&mut self, _id: u32, _ins: *mut c_void, _opcode: &[u8], _is_32: bool, _is_64: bool) {}
+    fn opcode(&mut self, _id: u32, _ins: *const c_void, _opcode: &[u8], _is_32: bool, _is_64: bool) {}
     fn interrupt(&mut self, _id: u32, _vector: u32) {}
     fn exception(&mut self, _id: u32, _vector: u32, _error_code: u32) {}
     fn hw_interrupt(&mut self, _id: u32, _vector: u32, _pc: (u16, Address)) {}
