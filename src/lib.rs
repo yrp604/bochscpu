@@ -20,3 +20,4 @@ mod syncunsafecell;
 pub mod cpu;
 pub mod hook;
 pub mod mem;
+pub mod opcode;

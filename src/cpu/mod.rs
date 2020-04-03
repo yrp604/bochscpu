@@ -147,7 +147,7 @@ extern "C" {
     pub(crate) fn cpu_killbit(id: u32) -> u32;
     fn cpu_set_killbit(id: u32);
     fn cpu_clear_killbit(id: u32);
-    fn cpu_exception(id: u32, vector: u32, error: u16) -> !;
+    pub(crate) fn cpu_exception(id: u32, vector: u32, error: u16) -> !;
 }
 
 enum GpRegs {
@@ -240,6 +240,18 @@ static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
 
 unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
     &mut (*(CPU_TRACKING.0.get()))[id as usize]
+}
+
+#[ctor]
+static CPU_EXCEPTION: SyncUnsafeCell<Vec<Option<(u32, u16)>>> =
+    { SyncUnsafeCell::new(vec![None; NUM_CPUS]) };
+
+pub(crate) unsafe fn exception(id: u32) -> &'static mut Option<(u32, u16)> {
+    &mut (*(CPU_EXCEPTION.0.get()))[id as usize]
+}
+
+pub(crate) unsafe fn set_exception(id: u32, e: Option<(u32, u16)>) {
+    *exception(id) = e;
 }
 
 pub(crate) unsafe fn run_state(id: u32) -> RunState {
@@ -608,8 +620,9 @@ impl Cpu {
         self.set_mode();
     }
 
-    pub unsafe fn exception(&self, vector: u32, error: u16) -> ! {
-        cpu_exception(self.handle, vector, error)
+    pub unsafe fn set_exception(&self, e: Option<(u32, Option<u16>)>) {
+        let ex = e.map(|y| (y.0, y.1.unwrap_or(0)));
+        set_exception(self.handle, ex);
     }
 
     //
