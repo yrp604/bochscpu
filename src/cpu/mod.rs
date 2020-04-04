@@ -271,7 +271,7 @@ extern "C" fn bochscpu_rand(id: u32) -> u64 {
 }
 
 pub struct CpuRun<'a> {
-    cpu: &'a Cpu
+    cpu: &'a Cpu,
 }
 
 impl<'a> CpuRun<'a> {
@@ -359,7 +359,7 @@ impl Cpu {
             RunState::Stop => {
                 set_hook_event(self.handle, Some(HookEvent::Stop));
                 cpu_set_killbit(self.handle);
-            },
+            }
             _ => cpu_clear_killbit(self.handle),
         };
     }
