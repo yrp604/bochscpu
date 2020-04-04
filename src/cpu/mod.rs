@@ -3,7 +3,7 @@ use std::convert::TryInto;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::hook::{self, Hooks};
+use crate::hook::{self, set_hook_event, HookEvent, Hooks};
 use crate::syncunsafecell::SyncUnsafeCell;
 use crate::{Address, PhyAddress, NUM_CPUS};
 
@@ -216,7 +216,6 @@ pub struct Seg {
 pub enum RunState {
     Go,
     Stop,
-    Bail,
 }
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
@@ -240,18 +239,6 @@ static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
 
 unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
     &mut (*(CPU_TRACKING.0.get()))[id as usize]
-}
-
-#[ctor]
-static CPU_EXCEPTION: SyncUnsafeCell<Vec<Option<(u32, u16)>>> =
-    { SyncUnsafeCell::new(vec![None; NUM_CPUS]) };
-
-pub(crate) unsafe fn exception(id: u32) -> &'static mut Option<(u32, u16)> {
-    &mut (*(CPU_EXCEPTION.0.get()))[id as usize]
-}
-
-pub(crate) unsafe fn set_exception(id: u32, e: Option<(u32, u16)>) {
-    *exception(id) = e;
 }
 
 pub(crate) unsafe fn run_state(id: u32) -> RunState {
@@ -293,6 +280,8 @@ impl<'a> CpuRun<'a> {
     }
 
     pub unsafe fn run(self) -> RunState {
+        set_hook_event(self.cpu.handle, None);
+
         self.cpu.set_run_state(RunState::Go);
 
         while cpu_killbit(self.cpu.handle) == 0 {
@@ -367,7 +356,10 @@ impl Cpu {
         set_run_state(self.handle, rs);
 
         match rs {
-            RunState::Stop => cpu_set_killbit(self.handle),
+            RunState::Stop => {
+                set_hook_event(self.handle, Some(HookEvent::Stop));
+                cpu_set_killbit(self.handle);
+            },
             _ => cpu_clear_killbit(self.handle),
         };
     }
@@ -620,9 +612,8 @@ impl Cpu {
         self.set_mode();
     }
 
-    pub unsafe fn set_exception(&self, e: Option<(u32, Option<u16>)>) {
-        let ex = e.map(|y| (y.0, y.1.unwrap_or(0)));
-        set_exception(self.handle, ex);
+    pub unsafe fn set_exception(&self, vector: u32, error: Option<u16>) {
+        set_hook_event(self.handle, Some(HookEvent::Exception(vector, error)));
     }
 
     //
@@ -638,7 +629,7 @@ impl Cpu {
     pub unsafe fn set_rip(&self, v: u64) {
         cpu_set_pc(self.handle, v);
 
-        self.set_run_state(RunState::Bail);
+        set_hook_event(self.handle, Some(HookEvent::SetPc));
     }
 
     pub unsafe fn rax(&self) -> u64 {
