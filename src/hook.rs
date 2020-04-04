@@ -312,10 +312,7 @@ unsafe extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -327,10 +324,7 @@ unsafe extern "C" fn bx_instr_hlt(cpu: u32) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -344,10 +338,7 @@ unsafe extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags:
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -361,10 +352,7 @@ unsafe extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, 
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -382,10 +370,7 @@ unsafe extern "C" fn bx_instr_cnear_branch_not_taken(
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -404,10 +389,7 @@ unsafe extern "C" fn bx_instr_ucnear_branch(
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -428,10 +410,7 @@ unsafe extern "C" fn bx_instr_far_branch(
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -458,10 +437,7 @@ unsafe extern "C" fn bx_instr_opcode(
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -473,10 +449,7 @@ unsafe extern "C" fn bx_instr_interrupt(cpu: u32, vector: u32) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -490,10 +463,7 @@ unsafe extern "C" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) 
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -507,10 +477,7 @@ unsafe extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: A
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -534,10 +501,7 @@ extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
 
         if let Some(e) = hook_event(cpu).take() {
             match e {
-                HookEvent::Stop => cpu_bail(cpu),
-                HookEvent::SetPc => {
-                    cpu_bail(cpu);
-                }
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
                 HookEvent::Exception(vector, error) => {
                     cpu_exception(cpu, vector, error.unwrap_or(0))
                 }
@@ -554,10 +518,7 @@ unsafe extern "C" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -571,20 +532,14 @@ unsafe extern "C" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offse
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -598,10 +553,7 @@ unsafe extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddres
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -613,10 +565,7 @@ unsafe extern "C" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -628,10 +577,7 @@ unsafe extern "C" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -643,10 +589,7 @@ unsafe extern "C" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -667,10 +610,7 @@ unsafe extern "C" fn bx_instr_lin_access(
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -684,10 +624,7 @@ unsafe extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memty
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -718,10 +655,7 @@ unsafe extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
@@ -735,10 +669,7 @@ unsafe extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) 
 
     if let Some(e) = hook_event(cpu).take() {
         match e {
-            HookEvent::Stop => cpu_bail(cpu),
-            HookEvent::SetPc => {
-                cpu_bail(cpu);
-            }
+            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
