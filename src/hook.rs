@@ -17,7 +17,7 @@ pub(crate) enum HookEvent {
 
 #[ctor]
 static HOOK_EVENTS: SyncUnsafeCell<Vec<Option<HookEvent>>> =
-    { SyncUnsafeCell::new(vec![None; NUM_CPUS]) };
+    SyncUnsafeCell::new(vec![None; NUM_CPUS]);
 
 pub(crate) unsafe fn hook_event(id: u32) -> &'static mut Option<HookEvent> {
     &mut (*(HOOK_EVENTS.0.get()))[id as usize]

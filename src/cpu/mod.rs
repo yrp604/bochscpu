@@ -235,7 +235,7 @@ impl Default for Tracking {
 
 #[ctor]
 static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
-    { SyncUnsafeCell::new(vec![Tracking::default(); NUM_CPUS]) };
+    SyncUnsafeCell::new(vec![Tracking::default(); NUM_CPUS]);
 
 unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
     &mut (*(CPU_TRACKING.0.get()))[id as usize]

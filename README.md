@@ -2,31 +2,27 @@
 
 ## install
 
+Download the prebuilt artifacts from [bochscpu-build](https://github.com/yrp604/bochscpu-build).
+Install the `lib` and `bochs` folders into the `bochscpu` checkout. For example:
+```
+bochscpu$ ls -l
+total 20
+drwxrwxrwx 1 x x 4096 Jan  3 00:09 bochs      # bochs directory from pre-built artifacts
+-rwxrwxrwx 1 x x 8318 Jan  2 23:28 build.rs
+drwxrwxrwx 1 x x 4096 Jan  2 23:28 cabi
+-rwxrwxrwx 1 x x 4772 Jan  3 00:16 Cargo.lock
+-rwxrwxrwx 1 x x  427 Jan  2 23:28 Cargo.toml
+drwxrwxrwx 1 x x 4096 Jan  3 00:09 lib        # lib directory from pre-built artifacts
+-rwxrwxrwx 1 x x  502 Jan  2 23:28 README.md
+drwxrwxrwx 1 x x 4096 Jan  3 00:20 src
+drwxrwxrwx 1 x x 4096 Jan  3 00:16 target
+-rwxrwxrwx 1 x x  276 Jan  2 23:28 TODO.md
+```
+
 ## usage
 
-```rust
-use bochscpu::cpu::Cpu;
-use bochscpu::hook;
+bochscpu exposes all the instrumentation points that bochs does. These are
+documented [here](http://bochs.sourceforge.net/cgi-bin/lxr/source/instrument/instrumentation.txt).
 
-fn main() {
-    stderrlog::new()
-        .verbosity(11)
-        .init()
-        .unwrap();
-
-
-    unsafe {
-        hook::exception(|cpuid, vector, error_code, | {
-            println!(
-                "[!] exception cpuid: {} vector {:x} error code {:x}",
-                cpuid,
-                vector,
-                error_code
-            );
-        });
-
-        let c = Cpu::new(0);
-        c.run();
-    }
-}
-```
+For an example of initalizing and using the emulator, see the source code for
+the [benchmark example](https://github.com/yrp604/bochscpu-bench/blob/master/src/fib.rs).
