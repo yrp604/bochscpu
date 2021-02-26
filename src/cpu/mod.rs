@@ -279,7 +279,7 @@ impl<'a> CpuRun<'a> {
         Self { cpu }
     }
 
-    pub unsafe fn run(self) -> RunState {
+    pub unsafe fn run(&self) -> RunState {
         set_hook_event(self.cpu.handle, None);
 
         self.cpu.set_run_state(RunState::Go);
