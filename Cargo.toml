@@ -8,7 +8,7 @@ edition = "2018"
 crate-type = ["dylib", "rlib"]
 
 [dependencies]
-blake3 = "0.2"
+blake3 = "0.3"
 ctor = "0.1"
 fnv = "1"
 lazy_static = "1"
