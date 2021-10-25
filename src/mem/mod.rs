@@ -1,8 +1,8 @@
 use std::slice;
 
 use crate::cpu::{cpu_bail, cpu_killbit};
-use crate::PhyAddress;
 use crate::hook;
+use crate::PhyAddress;
 
 mod phy;
 pub use phy::*;
@@ -32,14 +32,14 @@ pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) {
 }
 
 #[no_mangle]
-extern "C" fn mem_guest_to_host(cpu: u32, gpa: PhyAddress, _rw: u32) -> *mut u8 {
+extern "C-unwind" fn mem_guest_to_host(cpu: u32, gpa: PhyAddress, _rw: u32) -> *mut u8 {
     trace!("translating guest phys {:x}...", gpa);
 
     unsafe { guest_phy_translate(cpu, gpa) }
 }
 
 #[no_mangle]
-extern "C" fn mem_read_phy(cpu: u32, gpa: PhyAddress, sz: u32, dst: *mut u8) {
+extern "C-unwind" fn mem_read_phy(cpu: u32, gpa: PhyAddress, sz: u32, dst: *mut u8) {
     trace!("mem read {} bytes from phys {:x}...", sz, gpa);
 
     let sz = sz as usize;
@@ -55,7 +55,7 @@ extern "C" fn mem_read_phy(cpu: u32, gpa: PhyAddress, sz: u32, dst: *mut u8) {
 }
 
 #[no_mangle]
-extern "C" fn mem_write_phy(cpu: u32, gpa: PhyAddress, sz: u32, src: *const u8) {
+extern "C-unwind" fn mem_write_phy(cpu: u32, gpa: PhyAddress, sz: u32, src: *const u8) {
     trace!("mem write {} bytes to phys {:x}...", sz, gpa);
 
     let sz = sz as usize;

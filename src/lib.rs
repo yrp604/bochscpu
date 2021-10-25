@@ -1,4 +1,4 @@
-#![feature(unwind_attributes)]
+#![feature(c_unwind)]
 
 #[macro_use]
 extern crate ctor;

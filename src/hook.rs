@@ -301,7 +301,7 @@ extern "C" fn bx_instr_exit(_: u32) {}
 //
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
+unsafe extern "C-unwind" fn bx_instr_reset(cpu: u32, ty: u32) {
     let src: ResetSource = ty.into();
 
     // this is kind of awkward -- we call reset during cpu init to initialize
@@ -323,7 +323,7 @@ unsafe extern "C" fn bx_instr_reset(cpu: u32, ty: u32) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_hlt(cpu: u32) {
+unsafe extern "C-unwind" fn bx_instr_hlt(cpu: u32) {
     hooks().iter_mut().for_each(|x| x.hlt(cpu));
 
     if let Some(e) = hook_event(cpu).take() {
@@ -335,7 +335,7 @@ unsafe extern "C" fn bx_instr_hlt(cpu: u32) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
+unsafe extern "C-unwind" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.mwait(cpu, addr, len as usize, flags));
@@ -349,7 +349,11 @@ unsafe extern "C" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags:
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, new_eip: Address) {
+unsafe extern "C-unwind" fn bx_instr_cnear_branch_taken(
+    cpu: u32,
+    branch_eip: Address,
+    new_eip: Address,
+) {
     hooks()
         .iter_mut()
         .for_each(|x| x.cnear_branch_taken(cpu, branch_eip, new_eip));
@@ -363,7 +367,7 @@ unsafe extern "C" fn bx_instr_cnear_branch_taken(cpu: u32, branch_eip: Address, 
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_cnear_branch_not_taken(
+unsafe extern "C-unwind" fn bx_instr_cnear_branch_not_taken(
     cpu: u32,
     branch_eip: Address,
     new_eip: Address,
@@ -381,7 +385,7 @@ unsafe extern "C" fn bx_instr_cnear_branch_not_taken(
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_ucnear_branch(
+unsafe extern "C-unwind" fn bx_instr_ucnear_branch(
     cpu: u32,
     what: u32,
     branch_eip: Address,
@@ -400,7 +404,7 @@ unsafe extern "C" fn bx_instr_ucnear_branch(
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_far_branch(
+unsafe extern "C-unwind" fn bx_instr_far_branch(
     cpu: u32,
     what: u32,
     prev_cs: u16,
@@ -421,7 +425,7 @@ unsafe extern "C" fn bx_instr_far_branch(
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_opcode(
+unsafe extern "C-unwind" fn bx_instr_opcode(
     cpu: u32,
     i: *mut c_void,
     opcode: *const u8,
@@ -448,7 +452,7 @@ unsafe extern "C" fn bx_instr_opcode(
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_interrupt(cpu: u32, vector: u32) {
+unsafe extern "C-unwind" fn bx_instr_interrupt(cpu: u32, vector: u32) {
     hooks().iter_mut().for_each(|x| x.interrupt(cpu, vector));
 
     if let Some(e) = hook_event(cpu).take() {
@@ -460,7 +464,7 @@ unsafe extern "C" fn bx_instr_interrupt(cpu: u32, vector: u32) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) {
+unsafe extern "C-unwind" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.exception(cpu, vector, error_code));
@@ -474,7 +478,7 @@ unsafe extern "C" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) 
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: Address) {
+unsafe extern "C-unwind" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: Address) {
     hooks()
         .iter_mut()
         .for_each(|x| x.hw_interrupt(cpu, vector, (cs, eip)));
@@ -488,7 +492,7 @@ unsafe extern "C" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: A
 }
 
 #[no_mangle]
-extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
+extern "C-unwind" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
     let ty = what.into();
     let maybe_cr3 = match ty {
         TlbCntrl::MovCr0 => Some(new_cr3),
@@ -515,7 +519,7 @@ extern "C" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
+unsafe extern "C-unwind" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.cache_cntrl(cpu, what.into()));
@@ -529,7 +533,7 @@ unsafe extern "C" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offset: Address) {
+unsafe extern "C-unwind" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offset: Address) {
     hooks()
         .iter_mut()
         .for_each(|x| x.prefetch_hint(cpu, what.into(), seg, offset));
@@ -550,7 +554,7 @@ unsafe extern "C" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offse
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
+unsafe extern "C-unwind" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
     hooks()
         .iter_mut()
         .for_each(|x| x.clflush(cpu, laddr, paddr));
@@ -564,7 +568,7 @@ unsafe extern "C" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddres
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
+unsafe extern "C-unwind" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
     hooks().iter_mut().for_each(|x| x.before_execution(cpu, i));
 
     if let Some(e) = hook_event(cpu).take() {
@@ -576,7 +580,7 @@ unsafe extern "C" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
+unsafe extern "C-unwind" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
     hooks().iter_mut().for_each(|x| x.after_execution(cpu, i));
 
     if let Some(e) = hook_event(cpu).take() {
@@ -588,7 +592,7 @@ unsafe extern "C" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
+unsafe extern "C-unwind" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
     hooks().iter_mut().for_each(|x| x.repeat_iteration(cpu, i));
 
     if let Some(e) = hook_event(cpu).take() {
@@ -600,7 +604,7 @@ unsafe extern "C" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_lin_access(
+unsafe extern "C-unwind" fn bx_instr_lin_access(
     cpu: u32,
     lin: Address,
     phy: Address,
@@ -621,7 +625,13 @@ unsafe extern "C" fn bx_instr_lin_access(
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memtype: u32, rw: u32) {
+unsafe extern "C-unwind" fn bx_instr_phy_access(
+    cpu: u32,
+    phy: Address,
+    len: u32,
+    memtype: u32,
+    rw: u32,
+) {
     hooks()
         .iter_mut()
         .for_each(|x| x.phy_access(cpu, phy, len as usize, memtype.into(), rw.into()));
@@ -635,26 +645,26 @@ unsafe extern "C" fn bx_instr_phy_access(cpu: u32, phy: Address, len: u32, memty
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_inp(addr: u16, len: u32) {
+unsafe extern "C-unwind" fn bx_instr_inp(addr: u16, len: u32) {
     hooks().iter_mut().for_each(|x| x.inp(addr, len as usize));
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_inp2(addr: u16, len: u32, val: u32) {
+unsafe extern "C-unwind" fn bx_instr_inp2(addr: u16, len: u32, val: u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.inp2(addr, len as usize, val));
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
+unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.outp(addr, len as usize, val));
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
+unsafe extern "C-unwind" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
     hooks().iter_mut().for_each(|x| x.wrmsr(cpu, addr, value));
 
     if let Some(e) = hook_event(cpu).take() {
@@ -666,7 +676,7 @@ unsafe extern "C" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
+unsafe extern "C-unwind" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
     hooks()
         .iter_mut()
         .for_each(|x| x.vmexit(cpu, reason, qualification));
@@ -679,15 +689,11 @@ unsafe extern "C" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) 
     }
 }
 
-pub (crate) fn fault(gpa: PhyAddress) {
+pub(crate) fn fault(gpa: PhyAddress) {
     let hooks = unsafe { hooks() };
     if hooks.is_empty() {
         panic!("no fault handler set");
     }
 
-    hooks
-        .iter_mut()
-        .for_each(|x| x.missing_page( gpa));
-
+    hooks.iter_mut().for_each(|x| x.missing_page(gpa));
 }
-
