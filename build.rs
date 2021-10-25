@@ -233,8 +233,10 @@ fn main() {
         .compile("apic");
     println!("cargo:rustc-link-lib=static=apic");
 
-    println!("cargo:rustc-link-search=lib");
-
+    // Absolute dir for linker search
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+    println!("cargo:rustc-link-search={}/lib", manifest_dir);
+    
     println!("cargo:rustc-link-lib=static=cpu");
     println!("cargo:rustc-link-lib=static=fpu");
     println!("cargo:rustc-link-lib=static=cpudb");
