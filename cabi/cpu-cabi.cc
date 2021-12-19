@@ -3,6 +3,7 @@
 
 #include "bochs.h"
 #include "cpu/cpu.h"
+#include "pc_system.h"
 
 typedef BX_CPU_C *BX_CPU_C_PTR;
 

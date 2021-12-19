@@ -1,4 +1,5 @@
 #include "bochs.h"
+#include "gui/siminterface.h"
 
 namespace rust {
 extern "C" {
@@ -77,7 +78,7 @@ BOCHSAPI void sim_delete_param_num(bx_param_num_c *n) {
     delete n;
 }
 
-BOCHSAPI bx_param_bool_c* sim_new_param_bool(const char *name, bx_bool val)
+BOCHSAPI bx_param_bool_c* sim_new_param_bool(const char *name, bool val)
 {
     return new bx_param_bool_c(
             NULL,

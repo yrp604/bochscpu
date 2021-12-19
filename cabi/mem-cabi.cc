@@ -1,5 +1,6 @@
 #include "bochs.h"
 #include "cpu/cpu.h"
+#include "memory/memory-bochs.h"
 
 namespace rust {
 extern "C" {
@@ -26,6 +27,13 @@ void BX_MEM_C::readPhysicalPage(BX_CPU_C *cpu, bx_phy_address addr, unsigned len
 Bit8u *BX_MEM_C::getHostMemAddr(BX_CPU_C *cpu, bx_phy_address addr, unsigned rw)
 {
     return rust::mem_guest_to_host(cpu->which_cpu(), addr, rw);
+}
+
+bool BX_MEM_C::dbg_fetch_mem(BX_CPU_C *cpu, bx_phy_address addr, unsigned len, Bit8u *buf)
+{
+    assert(false);
+
+    return false;
 }
 
 BOCHSAPI BX_MEM_C bx_mem;
