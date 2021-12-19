@@ -266,10 +266,6 @@ pub trait Hooks {
     fn wrmsr(&mut self, _id: u32, _msr: u32, _val: u64) {}
 
     fn vmexit(&mut self, _id: u32, _reason: u32, _qualification: u64) {}
-
-    fn missing_page(&mut self, _paddr: PhyAddress) {
-        panic!("no missing_page function set");
-    }
 }
 
 static HOOKS: SyncUnsafeCell<Vec<&mut dyn Hooks>> = SyncUnsafeCell::new(Vec::new());
@@ -687,13 +683,4 @@ unsafe extern "C-unwind" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification
             HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
         }
     }
-}
-
-pub(crate) fn fault(gpa: PhyAddress) {
-    let hooks = unsafe { hooks() };
-    if hooks.is_empty() {
-        panic!("no fault handler set");
-    }
-
-    hooks.iter_mut().for_each(|x| x.missing_page(gpa));
 }

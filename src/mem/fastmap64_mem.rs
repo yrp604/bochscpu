@@ -13,7 +13,7 @@ pub type FastMap64<K, V> = HashMap<K, V, BuildHasherDefault<FnvHasher>>;
 pub static MEM: SyncUnsafeCell<FastMap64<PhyAddress, *mut u8>> =
     SyncUnsafeCell::new(FastMap64::default());
 
-pub unsafe fn mem() -> &'static mut FastMap64<PhyAddress, *mut u8> {
+unsafe fn mem() -> &'static mut FastMap64<PhyAddress, *mut u8> {
     &mut (*(MEM.0.get()))
 }
 

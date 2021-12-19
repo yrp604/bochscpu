@@ -1,7 +1,7 @@
 use std::slice;
 
 use crate::cpu::{cpu_bail, cpu_killbit};
-use crate::hook;
+use crate::syncunsafecell::SyncUnsafeCell;
 use crate::PhyAddress;
 
 mod phy;
@@ -14,15 +14,24 @@ pub use virt::*;
 // benchmarks fnvhash + hashbrown seems to be the winning combo
 mod fastmap64_mem;
 use fastmap64_mem::page_insert as mem_insert;
-pub use fastmap64_mem::{mem, page_remove};
+pub use fastmap64_mem::page_remove;
 use fastmap64_mem::{resolve_hva, resolve_hva_checked};
 
 pub const fn phy_mask(gpa: PhyAddress) -> PhyAddress {
     gpa & 0x000f_ffff_ffff_ffff
 }
 
+#[ctor]
+static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> =
+    SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set")));
+
 const fn page_off(a: PhyAddress) -> (PhyAddress, usize) {
     (a & !0xfff, a as usize & 0xfff)
+}
+
+pub unsafe fn fault(gpa: PhyAddress) {
+    let f = FAULT.0.get();
+    (**f)(gpa);
 }
 
 pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) {
@@ -79,7 +88,7 @@ pub unsafe fn guest_phy_translate(cpu: u32, gpa: PhyAddress) -> *mut u8 {
         return hva;
     }
 
-    hook::fault(real_gpa);
+    fault(real_gpa);
 
     // check to see if our fault handler requested the cpu be killed
     if cpu_killbit(cpu) != 0 {
@@ -101,7 +110,11 @@ pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8 {
         return hva;
     }
 
-    hook::fault(real_gpa);
+    fault(real_gpa);
 
     resolve_hva(real_gpa)
+}
+
+pub unsafe fn missing_page<T: FnMut(PhyAddress) + 'static>(f: T) {
+    *(FAULT.0.get()) = Box::new(f);
 }
