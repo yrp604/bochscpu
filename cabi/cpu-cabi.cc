@@ -7,6 +7,7 @@
 
 typedef BX_CPU_C *BX_CPU_C_PTR;
 
+
 extern "C" {
 BOCHSAPI void cpu_loop(unsigned id) {
     BX_CPU(id)->cpu_loop();

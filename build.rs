@@ -233,10 +233,29 @@ fn main() {
         .compile("apic");
     println!("cargo:rustc-link-lib=static=apic");
 
+    // intentionally not linked, just compiled to get the C_ASSERTs to check
+    // the mappings
+    #[cfg(not(target_os = "windows"))]
+    cc::Build::new()
+        .cpp(true)
+        .flag_if_supported("-Wno-unused-parameter")
+        .include(Path::new("bochs"))
+        .include(Path::new("bochs/instrument/bochscpu"))
+        .file("cabi/opcode-cabi.cc")
+        .compile("opcode");
+    #[cfg(target_os = "windows")]
+    cc::Build::new()
+        .cpp(true)
+        .define("WIN32", None)
+        .include(Path::new("bochs"))
+        .include(Path::new("bochs/instrument/bochscpu"))
+        .file("cabi/opcode-cabi.cc")
+        .compile("opcode");
+
     // Absolute dir for linker search
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     println!("cargo:rustc-link-search={}/lib", manifest_dir);
-    
+
     println!("cargo:rustc-link-lib=static=cpu");
     println!("cargo:rustc-link-lib=static=fpu");
     println!("cargo:rustc-link-lib=static=cpudb");
