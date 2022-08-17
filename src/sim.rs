@@ -48,8 +48,10 @@ lazy_static! {
                     cstr!("broadwell_ult"),
                     cstr!("corei7_skylake_x"),
                     cstr!("corei3_cnl"),
+                    cstr!("corei7_icelake_u"),
+                    cstr!("tigerlake"),
                 ],
-                24
+                27 // default to tigerlake
             )
         );
 
