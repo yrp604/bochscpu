@@ -64,6 +64,21 @@ BOCHSAPI void cpu_set_mode(unsigned id) {
 #endif
 }
 
+BOCHSAPI void cpu_set_mode_no_tlb_flush(unsigned id) {
+    BX_CPU_C *c = BX_CPU(id);
+
+#if BX_CPU_LEVEL >= 4
+    c->handleAlignmentCheck(/* CR0.AC reloaded */);
+#endif
+
+    c->handleCpuModeChange();
+
+#if BX_CPU_LEVEL >= 6
+    c->handleSseModeChange();
+#endif
+}
+
+
 // general purpose regs
 
 BOCHSAPI bx_address cpu_get_pc(unsigned id) {
