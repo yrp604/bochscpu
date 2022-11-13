@@ -597,7 +597,7 @@ impl Cpu {
             self.set_zmm(ii, *z);
         }
         self.set_mxcsr(s.mxcsr);
-        self.set_mxcsr_mask(s.mxcsr);
+        self.set_mxcsr_mask(s.mxcsr_mask);
 
         self.set_fp_cw(s.fpcw);
         self.set_fp_sw(s.fpsw);
