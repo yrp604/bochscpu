@@ -531,7 +531,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn set_state(&self, s: &State) {
+    unsafe fn set_state_regs(&self, s: &State) {
         self.set_seed(s.bochscpu_seed);
 
         self.set_rip(s.rip);
@@ -608,88 +608,16 @@ impl Cpu {
         for (ii, f) in (&s.fpst).iter().enumerate() {
             self.set_fp_st(ii, *f);
         }
+    }
 
-        // because we used set_cs_raw we need to update the state manually.
+    pub unsafe fn set_state(&self, s: &State) {
+        self.set_state_regs(s);
+
         self.set_mode();
     }
 
     pub unsafe fn set_state_no_tlb_flush(&self, s: &State) {
-        self.set_seed(s.bochscpu_seed);
-
-        self.set_rip(s.rip);
-
-        self.set_rax(s.rax);
-        self.set_rcx(s.rcx);
-        self.set_rdx(s.rdx);
-        self.set_rbx(s.rbx);
-        self.set_rsp(s.rsp);
-        self.set_rbp(s.rbp);
-        self.set_rsi(s.rsi);
-        self.set_rdi(s.rdi);
-        self.set_r8(s.r8);
-        self.set_r9(s.r9);
-        self.set_r10(s.r10);
-        self.set_r11(s.r11);
-        self.set_r12(s.r12);
-        self.set_r13(s.r13);
-        self.set_r14(s.r14);
-        self.set_r15(s.r15);
-        self.set_rflags(s.rflags);
-
-        self.set_es(s.es);
-        self.set_cs_raw(s.cs);
-        self.set_ss(s.ss);
-        self.set_ds(s.ds);
-        self.set_fs(s.fs);
-        self.set_gs(s.gs);
-
-        self.set_ldtr(s.ldtr);
-        self.set_tr(s.tr);
-        self.set_gdtr(s.gdtr);
-        self.set_idtr(s.idtr);
-
-        self.set_dr0(s.dr0);
-        self.set_dr1(s.dr1);
-        self.set_dr2(s.dr2);
-        self.set_dr3(s.dr3);
-        self.set_dr6(s.dr6);
-        self.set_dr7(s.dr7);
-
-        self.set_cr0(s.cr0);
-        self.set_cr2(s.cr2);
-        self.set_cr3(s.cr3);
-        self.set_cr4(s.cr4);
-        self.set_cr8(s.cr8);
-        self.set_xcr0(s.xcr0);
-
-        self.set_kernel_gs_base(s.kernel_gs_base);
-        self.set_sysenter_cs(s.sysenter_cs);
-        self.set_sysenter_esp(s.sysenter_esp);
-        self.set_sysenter_eip(s.sysenter_eip);
-        self.set_efer(s.efer);
-        self.set_star(s.star);
-        self.set_lstar(s.lstar);
-        self.set_cstar(s.cstar);
-        self.set_sfmask(s.sfmask);
-        self.set_tsc(s.tsc);
-        self.set_apic_base(s.apic_base);
-        self.set_pat(s.pat);
-        self.set_tsc_aux(s.tsc_aux);
-
-        for (ii, z) in (&s.zmm).iter().enumerate() {
-            self.set_zmm(ii, *z);
-        }
-        self.set_mxcsr(s.mxcsr);
-        self.set_mxcsr_mask(s.mxcsr);
-
-        self.set_fp_cw(s.fpcw);
-        self.set_fp_sw(s.fpsw);
-        self.set_fp_tw(s.fptw);
-        self.set_fp_op(s.fpop);
-
-        for (ii, f) in (&s.fpst).iter().enumerate() {
-            self.set_fp_st(ii, *f);
-        }
+        self.set_state_regs(s);
 
         // because we used set_cs_raw we need to update the state manually.
         self.set_mode_no_tlb_flush();
