@@ -530,7 +530,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn set_state(&self, s: &State) {
+    pub unsafe fn set_state_no_flush(&self, s: &State) {
         self.set_seed(s.bochscpu_seed);
 
         self.set_rip(s.rip);
@@ -554,7 +554,7 @@ impl Cpu {
         self.set_rflags(s.rflags);
 
         self.set_es(s.es);
-        self.set_cs_raw(s.cs);
+        let deferred_flush = self.set_cs_deferred(s.cs);
         self.set_ss(s.ss);
         self.set_ds(s.ds);
         self.set_fs(s.fs);
@@ -608,7 +608,13 @@ impl Cpu {
             self.set_fp_st(ii, *f);
         }
 
-        // because we used set_cs_raw we need to update the state manually.
+        if deferred_flush {
+            self.set_mode();
+        }
+    }
+
+    pub unsafe fn set_state(&self, s: &State) {
+        self.set_state_no_flush(s);
         self.set_mode();
     }
 
@@ -821,15 +827,21 @@ impl Cpu {
     }
 
     pub unsafe fn set_cs(&self, v: Seg) {
-        self.set_seg(SegRegs::Cs, v);
-        self.set_mode();
+        if self.cs() != v {
+            self.set_seg(SegRegs::Cs, v);
+            self.set_mode();
+        }
     }
 
     /// This function does not update the cpu mode after setting CS. This is
     /// needed as during cpu init, if efer isn't yet populated the cpu will not
     /// know that long mode might be active and change the state.
-    pub unsafe fn set_cs_raw(&self, v: Seg) {
+    pub unsafe fn set_cs_deferred(&self, v: Seg) -> bool {
+        let old_cs = self.cs();
+
         self.set_seg(SegRegs::Cs, v);
+
+        old_cs != v
     }
 
     pub unsafe fn ss(&self) -> Seg {
@@ -1019,8 +1031,10 @@ impl Cpu {
     }
 
     pub unsafe fn set_cr0(&self, v: u32) {
-        cpu_set_cr0(self.handle, v);
-        self.set_mode();
+        if self.cr0() != v {
+            cpu_set_cr0(self.handle, v);
+            self.set_mode();
+        }
     }
 
     pub unsafe fn cr2(&self) -> Address {
@@ -1060,8 +1074,10 @@ impl Cpu {
     }
 
     pub unsafe fn set_efer(&self, v: u32) {
-        cpu_set_efer(self.handle, v);
-        self.set_mode();
+        if self.efer() != v {
+            cpu_set_efer(self.handle, v);
+            self.set_mode();
+        }
     }
 
     /// Update the internal bochs cpu mode
