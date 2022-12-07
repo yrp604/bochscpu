@@ -530,7 +530,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn set_state(&self, s: &State) {
+    pub unsafe fn set_state_no_flush(&self, s: &State) {
         self.set_seed(s.bochscpu_seed);
 
         self.set_rip(s.rip);
@@ -611,6 +611,11 @@ impl Cpu {
         if deferred_flush {
             self.set_mode();
         }
+    }
+
+    pub unsafe fn set_state(&self, s: &State) {
+        self.set_state_no_flush(s);
+        self.set_mode();
     }
 
     pub unsafe fn set_exception(&self, vector: u32, error: Option<u16>) {
