@@ -2,6 +2,7 @@
 #include "cpu/cpu.h"
 
 #include "cpu/decoder/ia_opcodes.h"
+#include "cpu/decoder/instr.h"
 
 extern "C" {
 // NOTE: this is the _bochs_ opcode, not the intel opcode
@@ -25,6 +26,25 @@ Bit64u instr_imm64(void *i) {
     return instr->Iq();
 }
 
+unsigned instr_src(void *i) {
+    bxInstruction_c *instr = (bxInstruction_c *)i;
+    return instr->src();
+}
+
+unsigned instr_dst(void *i) {
+    bxInstruction_c *instr = (bxInstruction_c *)i;
+    return instr->dst();
+}
+
+unsigned opcode_disasm_wrapper(bool is_32, bool is_64, bx_address cs_base,
+                               bx_address ip, const Bit8u *instr, char *disbuf,
+                               BxDisasmStyle style) {
+    bxInstruction_c i;
+    disasm(instr, is_32, is_64, disbuf, &i, cs_base, ip, style);
+    unsigned ilen = i.ilen();
+    return ilen;
+}
+
 /*
 void instr_dmp() {
     // 64
@@ -43,5 +63,4 @@ void instr_dmp() {
     printf("const BX_IA_CMP_EwsIb: u32 = %#x;\n", BX_IA_CMP_EwsIb);
 }
 */
-
 }
