@@ -54,6 +54,8 @@ fn main() {
     cc::Build::new()
         .cpp(true)
         .define("WIN32", None)
+        .define("BX_SUPPORT_X86_64", "1")
+        .define("NEED_CPU_REG_SHORTCUTS", "1")
         .include(Path::new("bochs"))
         .include(Path::new("bochs/instrument/bochscpu"))
         .file("cabi/instr-cabi.cc")
