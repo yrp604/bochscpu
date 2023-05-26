@@ -36,6 +36,16 @@ unsigned instr_dst(void *i) {
     return instr->dst();
 }
 
+unsigned instr_seg(void *i) {
+    bxInstruction_c *instr = (bxInstruction_c *)i;
+    return instr->seg();
+}
+
+unsigned instr_modC0(void *i) {
+    bxInstruction_c *instr = (bxInstruction_c *)i;
+    return instr->modC0();
+}
+
 Bit64u instr_resolve_addr(void *i) {
     bxInstruction_c *instr = (bxInstruction_c *)i;
 
@@ -62,22 +72,29 @@ unsigned opcode_disasm_wrapper(bool is_32, bool is_64, bx_address cs_base,
     return ilen;
 }
 
-/*
-void instr_dmp() {
-    // 64
-    printf("const BX_IA_CMP_RAXId: u32 = %#x;\n", BX_IA_CMP_RAXId);
-    printf("const BX_IA_CMP_EqsIb: u32 = %#x;\n", BX_IA_CMP_EqsIb);
-    printf("const BX_IA_CMP_EqId: u32 = %#x;\n", BX_IA_CMP_EqId);
+// void instr_dmp() {
+//     // 64
+//     printf("64\n");
+//     printf("const BX_IA_CMP_RAXId: u32 = %#x;\n", BX_IA_CMP_RAXId);
+//     printf("const BX_IA_CMP_EqsIb: u32 = %#x;\n", BX_IA_CMP_EqsIb);
+//     printf("const BX_IA_CMP_EqId: u32 = %#x;\n", BX_IA_CMP_EqId);
+//     printf("const BX_IA_CMP_GqEq: u32 = %#x;\n", BX_IA_CMP_GqEq);
+//     printf("const BX_IA_CMP_EqGq: u32 = %#x;\n", BX_IA_CMP_EqGq);
 
-    // 32
-    printf("const BX_IA_CMP_EAXId: u32 = %#x;\n", BX_IA_CMP_EAXId);
-    printf("const BX_IA_CMP_EdId: u32 = %#x;\n", BX_IA_CMP_EdId);
-    printf("const BX_IA_CMP_EdsIb: u32 = %#x;\n", BX_IA_CMP_EdsIb);
+//     // 32
+//     printf("32\n");
+//     printf("const BX_IA_CMP_EAXId: u32 = %#x;\n", BX_IA_CMP_EAXId);
+//     printf("const BX_IA_CMP_EdsIb: u32 = %#x;\n", BX_IA_CMP_EdsIb);
+//     printf("const BX_IA_CMP_EdId: u32 = %#x;\n", BX_IA_CMP_EdId);
+//     printf("const BX_IA_CMP_GdEd: XXX = %#x;\n", BX_IA_CMP_GdEd);
+//     printf("const BX_IA_CMP_EdGd: XXX = %#x;\n", BX_IA_CMP_EdGd);
 
-    // 16
-    printf("const BX_IA_CMP_AXIw: u32 = %#x;\n", BX_IA_CMP_AXIw);
-    printf("const BX_IA_CMP_EwIw: u32 = %#x;\n", BX_IA_CMP_EwIw);
-    printf("const BX_IA_CMP_EwsIb: u32 = %#x;\n", BX_IA_CMP_EwsIb);
-}
-*/
-}
+//     // 16
+//     printf("16\n");
+//     printf("const BX_IA_CMP_AXIw: u32 = %#x;\n", BX_IA_CMP_AXIw);
+//     printf("const BX_IA_CMP_EwsIb: u32 = %#x;\n", BX_IA_CMP_EwsIb);
+//     printf("const BX_IA_CMP_EwIw: u32 = %#x;\n", BX_IA_CMP_EwIw);
+//     printf("const BX_IA_CMP_GwEw: XXX = %#x;\n", BX_IA_CMP_GwEw);
+//     printf("const BX_IA_CMP_EwGw: XXX = %#x;\n", BX_IA_CMP_EwGw);
+// }
+// }

@@ -36,6 +36,8 @@ extern "C-unwind" {
     pub fn instr_imm64(_: *const c_void) -> u64;
     pub fn instr_src(_: *const c_void) -> u32;
     pub fn instr_dst(_: *const c_void) -> u32;
+    pub fn instr_seg(_: *const c_void) -> u32;
+    pub fn instr_modC0(_: *const c_void) -> u32;
     pub fn instr_resolve_addr(_: *const c_void) -> u64;
     pub fn opcode_disasm_wrapper(
         _: u32,

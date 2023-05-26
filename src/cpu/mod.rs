@@ -10,6 +10,10 @@ use crate::{Address, PhyAddress, NUM_CPUS};
 mod state;
 pub use state::State;
 
+extern "C-unwind" {
+    pub fn cpu_total_gpregs() -> u32;
+}
+
 // look at lock_api crate to see if I can figure out how to do cpu locking
 // so I dont need to make everything unsafe
 
@@ -197,7 +201,7 @@ impl From<u32> for GpRegs {
             13 => GpRegs::R13,
             14 => GpRegs::R14,
             15 => GpRegs::R15,
-            // @TODO: Should we panic here? (e.g. we have RIP, but it's unused)
+            // @TODO: Should we panic here?
             _ => panic!("Invalid GpRegs"),
         }
     }

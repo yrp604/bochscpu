@@ -66,6 +66,10 @@ BOCHSAPI void cpu_set_mode(unsigned id) {
 
 // general purpose regs
 
+BOCHSAPI unsigned cpu_total_gpregs() {
+    return BX_GENERAL_REGISTERS;
+}
+
 BOCHSAPI bx_address cpu_get_pc(unsigned id) {
     return BX_CPU(id)->get_instruction_pointer();
 }
