@@ -74,7 +74,7 @@ unsigned opcode_disasm_wrapper(bool is_32, bool is_64, bx_address cs_base,
 
 // void instr_dmp() {
 //     // 64
-//     printf("64\n");
+//     printf("CMP-64\n");
 //     printf("const BX_IA_CMP_RAXId: u32 = %#x;\n", BX_IA_CMP_RAXId);
 //     printf("const BX_IA_CMP_EqsIb: u32 = %#x;\n", BX_IA_CMP_EqsIb);
 //     printf("const BX_IA_CMP_EqId: u32 = %#x;\n", BX_IA_CMP_EqId);
@@ -82,7 +82,7 @@ unsigned opcode_disasm_wrapper(bool is_32, bool is_64, bx_address cs_base,
 //     printf("const BX_IA_CMP_EqGq: u32 = %#x;\n", BX_IA_CMP_EqGq);
 
 //     // 32
-//     printf("32\n");
+//     printf("CMP-32\n");
 //     printf("const BX_IA_CMP_EAXId: u32 = %#x;\n", BX_IA_CMP_EAXId);
 //     printf("const BX_IA_CMP_EdsIb: u32 = %#x;\n", BX_IA_CMP_EdsIb);
 //     printf("const BX_IA_CMP_EdId: u32 = %#x;\n", BX_IA_CMP_EdId);
@@ -90,11 +90,35 @@ unsigned opcode_disasm_wrapper(bool is_32, bool is_64, bx_address cs_base,
 //     printf("const BX_IA_CMP_EdGd: XXX = %#x;\n", BX_IA_CMP_EdGd);
 
 //     // 16
-//     printf("16\n");
+//     printf("CMP-16\n");
 //     printf("const BX_IA_CMP_AXIw: u32 = %#x;\n", BX_IA_CMP_AXIw);
 //     printf("const BX_IA_CMP_EwsIb: u32 = %#x;\n", BX_IA_CMP_EwsIb);
 //     printf("const BX_IA_CMP_EwIw: u32 = %#x;\n", BX_IA_CMP_EwIw);
 //     printf("const BX_IA_CMP_GwEw: XXX = %#x;\n", BX_IA_CMP_GwEw);
 //     printf("const BX_IA_CMP_EwGw: XXX = %#x;\n", BX_IA_CMP_EwGw);
+
+//     // 64
+//     printf("SUB-64\n");
+//     printf("BX_IA_SUB_RAXId = %#x,\n", BX_IA_SUB_RAXId);
+//     printf("BX_IA_SUB_EqsIb = %#x,\n", BX_IA_SUB_EqsIb);
+//     printf("BX_IA_SUB_EqId = %#x,\n", BX_IA_SUB_EqId);
+//     printf("BX_IA_SUB_GqEq = %#x,\n", BX_IA_SUB_GqEq);
+//     printf("BX_IA_SUB_EqGq = %#x,\n", BX_IA_SUB_EqGq);
+
+//     // 32
+//     printf("SUB-32\n");
+//     printf("BX_IA_SUB_EAXId = %#x,\n", BX_IA_SUB_EAXId);
+//     printf("BX_IA_SUB_EdsIb = %#x,\n", BX_IA_SUB_EdsIb);
+//     printf("BX_IA_SUB_EdId = %#x,\n", BX_IA_SUB_EdId);
+//     printf("BX_IA_SUB_GdEd = %#x,\n", BX_IA_SUB_GdEd);
+//     printf("BX_IA_SUB_EdGd = %#x,\n", BX_IA_SUB_EdGd);
+
+//     // 16
+//     printf("SUB-16\n");
+//     printf("BX_IA_SUB_AXIw = %#x,\n", BX_IA_SUB_AXIw);
+//     printf("BX_IA_SUB_EwsIb = %#x,\n", BX_IA_SUB_EwsIb);
+//     printf("BX_IA_SUB_EwIw = %#x,\n", BX_IA_SUB_EwIw);
+//     printf("BX_IA_SUB_GwEw = %#x,\n", BX_IA_SUB_GwEw);
+//     printf("BX_IA_SUB_EwGw = %#x,\n", BX_IA_SUB_EwGw);
 // }
-// }
+}
