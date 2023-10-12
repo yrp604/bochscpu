@@ -3,6 +3,7 @@ name = "bochscpu"
 version = "0.1.0"
 authors = ["x"]
 edition = "2021"
+rust-version = "1.71.0"
 
 [lib]
 crate-type = ["dylib", "rlib"]
@@ -24,3 +25,7 @@ panic = "abort"
 [profile.release]
 panic = "abort"
 lto = true
+
+[profile.release-with-debuginfo]
+inherits = "release"
+debug = true
