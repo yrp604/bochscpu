@@ -593,7 +593,7 @@ impl Cpu {
         self.set_pat(s.pat);
         self.set_tsc_aux(s.tsc_aux);
 
-        for (ii, z) in (&s.zmm).iter().enumerate() {
+        for (ii, z) in (s.zmm).iter().enumerate() {
             self.set_zmm(ii, *z);
         }
         self.set_mxcsr(s.mxcsr);
@@ -604,7 +604,7 @@ impl Cpu {
         self.set_fp_tw(s.fptw);
         self.set_fp_op(s.fpop);
 
-        for (ii, f) in (&s.fpst).iter().enumerate() {
+        for (ii, f) in (s.fpst).iter().enumerate() {
             self.set_fp_st(ii, *f);
         }
 
