@@ -432,7 +432,7 @@ unsafe extern "C-unwind" fn bx_instr_opcode(
     hooks().iter_mut().for_each(|x| {
         x.opcode(
             cpu,
-            i as *mut _ as *mut c_void,
+            i,
             slice::from_raw_parts(opcode, len as usize),
             is32 != 0,
             is64 != 0,
