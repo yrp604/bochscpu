@@ -25,10 +25,7 @@ pub unsafe fn resolve_hva(gpa: PhyAddress) -> *mut u8 {
 pub unsafe fn resolve_hva_checked(gpa: PhyAddress) -> Option<*mut u8> {
     let (page, off) = page_off(gpa);
 
-    match mem().get(&page) {
-        Some(p) => Some(p.add(off)),
-        None => None,
-    }
+    mem().get(&page).map(|p| p.add(off))
 }
 
 pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) {
