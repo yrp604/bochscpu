@@ -491,13 +491,17 @@ BOCHSAPI void cpu_set_fp_op(unsigned id, Bit16u v) {
     BX_CPU(id)->the_i387.foo = v;
 }
 
-BOCHSAPI Bit64u cpu_get_fp_st(unsigned id, unsigned reg) {
-    float_status_t s;
-    return (Bit64u)floatx80_to_int64(BX_CPU(id)->the_i387.st_space[reg], s);
+BOCHSAPI void cpu_get_fp_st(unsigned id, unsigned reg, Bit64u *fraction, Bit16u *exp) {
+    const floatx80 f = BX_CPU(id)->the_i387.st_space[reg];
+    *fraction = f.fraction;
+    *exp = f.exp;
 }
 
-BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, Bit64u v) {
-    BX_CPU(id)->the_i387.st_space[reg] = int64_to_floatx80(v);
+BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, const Bit64u *fraction, const Bit16u *exp) {
+    floatx80 f;
+    f.fraction = *fraction;
+    f.exp = *exp;
+    BX_CPU(id)->the_i387.st_space[reg] = f;
 }
 
 BOCHSAPI Bit32u cpu_get_mxcsr(unsigned id) {

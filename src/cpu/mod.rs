@@ -134,8 +134,8 @@ extern "C" {
     fn cpu_set_fp_tw(id: u32, val: u16);
     fn cpu_get_fp_op(id: u32) -> u16;
     fn cpu_set_fp_op(id: u32, val: u16);
-    fn cpu_get_fp_st(id: u32, reg: u32) -> u64;
-    fn cpu_set_fp_st(id: u32, reg: u32, val: u64);
+    fn cpu_get_fp_st(id: u32, reg: u32, val: *mut u64, exp: *mut u16);
+    fn cpu_set_fp_st(id: u32, reg: u32, val: u64, exp: u16);
 
     /// Bail out of the cpu eval loop
     ///
@@ -184,6 +184,14 @@ enum DRegs {
     Dr1 = 1,
     Dr2 = 2,
     Dr3 = 3,
+}
+
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[repr(C)]
+pub struct Float80 {
+    pub fraction: u64,
+    pub exp: u16
 }
 
 #[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq)]
@@ -1264,13 +1272,16 @@ impl Cpu {
         cpu_set_fp_op(self.handle, v)
     }
 
-    pub unsafe fn fp_st(&self, idx: usize) -> u64 {
+    pub unsafe fn fp_st(&self, idx: usize) -> Float80 {
         assert!(idx < 8);
-        cpu_get_fp_st(self.handle, idx as _)
+        let mut v = Float80 { fraction: 0, exp: 0 };
+        cpu_get_fp_st(self.handle, idx as _, &mut v.fraction, &mut v.exp);
+
+        v
     }
 
-    pub unsafe fn set_fp_st(&self, idx: usize, v: u64) {
+    pub unsafe fn set_fp_st(&self, idx: usize, v: Float80) {
         assert!(idx < 8);
-        cpu_set_fp_st(self.handle, idx as _, v)
+        cpu_set_fp_st(self.handle, idx as _, v.fraction, v.exp);
     }
 }

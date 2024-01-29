@@ -1,7 +1,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::cpu::{GlobalSeg, Seg, Zmm};
+use crate::cpu::{GlobalSeg, Seg, Zmm, Float80};
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -63,7 +63,7 @@ pub struct State {
     pub fpsw: u16,
     pub fptw: u16,
     pub fpop: u16,
-    pub fpst: [u64; 8],
+    pub fpst: [Float80; 8],
 
     // TODO xmm control info
     pub mxcsr: u32,
