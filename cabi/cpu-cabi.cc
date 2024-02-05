@@ -497,10 +497,10 @@ BOCHSAPI void cpu_get_fp_st(unsigned id, unsigned reg, Bit64u *fraction, Bit16u 
     *exp = f.exp;
 }
 
-BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, const Bit64u *fraction, const Bit16u *exp) {
+BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, const Bit64u fraction, const Bit16u exp) {
     floatx80 f;
-    f.fraction = *fraction;
-    f.exp = *exp;
+    f.fraction = fraction;
+    f.exp = exp;
     BX_CPU(id)->the_i387.st_space[reg] = f;
 }
 
