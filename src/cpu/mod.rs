@@ -1274,7 +1274,7 @@ impl Cpu {
 
     pub unsafe fn fp_st(&self, idx: usize) -> Float80 {
         assert!(idx < 8);
-        let mut v = Float80 { fraction: 0, exp: 0 };
+        let mut v = Float80::default();
         cpu_get_fp_st(self.handle, idx as _, &mut v.fraction, &mut v.exp);
 
         v
