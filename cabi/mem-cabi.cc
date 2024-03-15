@@ -10,11 +10,13 @@ extern "C" {
 }
 }
 
-BX_MEM_C::BX_MEM_C() {}
-BX_MEM_C::~BX_MEM_C() {}
+BX_MEM_C::BX_MEM_C() = default;
+BX_MEM_C::~BX_MEM_C() = default;
+BX_MEMORY_STUB_C::BX_MEMORY_STUB_C() = default;
+BX_MEMORY_STUB_C::~BX_MEMORY_STUB_C() = default;
 
 void BX_MEM_C::writePhysicalPage(BX_CPU_C *cpu, bx_phy_address addr,
-    unsigned len, void *data)
+                                                                      unsigned len, void *data)
 {
     return rust::mem_write_phy(cpu->which_cpu(), addr, len, data);
 }
@@ -34,6 +36,11 @@ bool BX_MEM_C::dbg_fetch_mem(BX_CPU_C *cpu, bx_phy_address addr, unsigned len, B
     assert(false);
 
     return false;
+}
+
+Bit64u BX_MEMORY_STUB_C::get_memory_len()
+{
+    return (BX_MEM_THIS len);
 }
 
 BOCHSAPI BX_MEM_C bx_mem;
