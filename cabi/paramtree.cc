@@ -47,8 +47,8 @@ bx_param_c::bx_param_c(Bit32u id, const char *param_name, const char *param_desc
   this->name = new char[strlen(param_name)+1];
   strcpy(this->name, param_name);
   set_description(param_desc);
-  this->text_format = default_text_format;
-  this->long_text_format = default_text_format;
+  this->text_format = (char*)default_text_format;
+  this->long_text_format = (char*)default_text_format;
   this->runtime_param = 0;
   this->enabled = 1;
   this->options = 0;
@@ -70,8 +70,8 @@ bx_param_c::bx_param_c(Bit32u id, const char *param_name, const char *param_labe
   strcpy(this->name, param_name);
   set_description(param_desc);
   set_label(param_label);
-  this->text_format = default_text_format;
-  this->long_text_format = default_text_format;
+  this->text_format = (char*)default_text_format;
+  this->long_text_format = (char*)default_text_format;
   this->runtime_param = 0;
   this->enabled = 1;
   this->options = 0;
@@ -371,7 +371,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p64bit = ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x" FMT_LL "x";
+    this->text_format = (char*)"0x" FMT_LL "x";
   }
 }
 
@@ -390,7 +390,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p64bit = (Bit64s*) ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x" FMT_LL "x";
+    this->text_format = (char*)"0x" FMT_LL "x";
   }
 }
 
@@ -409,7 +409,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p32bit = ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x%08x";
+    this->text_format = (char*)"0x%08x";
   }
 }
 
@@ -428,7 +428,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p32bit = (Bit32s*) ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x%08x";
+    this->text_format = (char*)"0x%08x";
   }
 }
 
@@ -447,7 +447,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p16bit = ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x%04x";
+    this->text_format = (char*)"0x%04x";
   }
 }
 
@@ -466,7 +466,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p16bit = (Bit16s*) ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x%04x";
+    this->text_format = (char*)"0x%04x";
   }
 }
 
@@ -486,7 +486,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p8bit = ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x%02x";
+    this->text_format = (char*)"0x%02x";
   }
 }
 
@@ -505,7 +505,7 @@ bx_shadow_num_c::bx_shadow_num_c(bx_param_c *parent,
   val.p8bit = (Bit8s*) ptr_to_real_val;
   if (base == BASE_HEX) {
     this->base = base;
-    this->text_format = "0x%02x";
+    this->text_format = (char*)"0x%02x";
   }
 }
 

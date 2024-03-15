@@ -3,6 +3,7 @@
 
 #include "bochs.h"
 #include "cpu/cpu.h"
+#include "cpu/apic.h"
 #include "pc_system.h"
 
 typedef BX_CPU_C *BX_CPU_C_PTR;
@@ -284,7 +285,7 @@ BOCHSAPI Bit32u cpu_get_cr8(unsigned id) {
 }
 
 BOCHSAPI void cpu_set_cr8(unsigned id, Bit32u v) {
-    BX_CPU(id)->lapic.set_tpr((v & 0xf) << 4);
+    BX_CPU(id)->lapic->set_tpr((v & 0xf) << 4);
 }
 
 BOCHSAPI Bit32u cpu_get_efer(unsigned id) {
