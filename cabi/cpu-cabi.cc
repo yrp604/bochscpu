@@ -31,11 +31,14 @@ BOCHSAPI void cpu_new(unsigned id) {
     BX_CPU(id)->sanity_checks();
 
     BX_INSTR_INITIALIZE(id);
+
+    BX_CPU(id)->lapic = new bx_local_apic_c(BX_CPU(id) , id);
 }
 
 BOCHSAPI void cpu_delete(unsigned id) {
 #if BX_SUPPORT_SMP
 
+    delete BX_CPU(id)->lapic;
     BX_CPU(id)->~BX_CPU_C();
     free(BX_CPU(id));
 
