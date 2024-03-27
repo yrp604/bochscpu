@@ -10,6 +10,10 @@ use crate::{Address, PhyAddress, NUM_CPUS};
 mod state;
 pub use state::State;
 
+extern "C-unwind" {
+    pub fn cpu_total_gpregs() -> u32;
+}
+
 // look at lock_api crate to see if I can figure out how to do cpu locking
 // so I dont need to make everything unsafe
 
@@ -27,6 +31,12 @@ extern "C" {
 
     fn cpu_get_reg64(id: u32, reg: u32) -> u64;
     fn cpu_set_reg64(id: u32, reg: u32, val: u64);
+
+    fn cpu_get_reg32(id: u32, reg: u32) -> u32;
+    fn cpu_set_reg32(id: u32, reg: u32, val: u32);
+
+    fn cpu_get_reg16(id: u32, reg: u32) -> u16;
+    fn cpu_set_reg16(id: u32, reg: u32, val: u16);
 
     fn cpu_get_eflags(id: u32) -> u32;
     fn cpu_set_eflags(id: u32, eflags: u32);
@@ -150,7 +160,9 @@ extern "C" {
     pub(crate) fn cpu_exception(id: u32, vector: u32, error: u16) -> !;
 }
 
-enum GpRegs {
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+#[repr(u32)]
+pub enum GpRegs {
     Rax = 0,
     Rcx = 1,
     Rdx = 2,
@@ -168,6 +180,31 @@ enum GpRegs {
     R14 = 14,
     R15 = 15,
     // unused Rip = 16,
+}
+
+impl From<u32> for GpRegs {
+    fn from(i: u32) -> Self {
+        match i {
+            0 => GpRegs::Rax,
+            1 => GpRegs::Rcx,
+            2 => GpRegs::Rdx,
+            3 => GpRegs::Rbx,
+            4 => GpRegs::Rsp,
+            5 => GpRegs::Rbp,
+            6 => GpRegs::Rsi,
+            7 => GpRegs::Rdi,
+            8 => GpRegs::R8,
+            9 => GpRegs::R9,
+            10 => GpRegs::R10,
+            11 => GpRegs::R11,
+            12 => GpRegs::R12,
+            13 => GpRegs::R13,
+            14 => GpRegs::R14,
+            15 => GpRegs::R15,
+            // @TODO: Should we panic here?
+            _ => panic!("Invalid GpRegs"),
+        }
+    }
 }
 
 enum SegRegs {
@@ -635,6 +672,30 @@ impl Cpu {
     //
 
     // gp regs
+
+    pub unsafe fn get_reg64(&self, reg: GpRegs) -> u64 {
+        cpu_get_reg64(self.handle, reg as _)
+    }
+
+    pub unsafe fn set_reg64(&self, reg: GpRegs, v: u64) {
+        cpu_set_reg64(self.handle, reg as _, v)
+    }
+
+    pub unsafe fn get_reg32(&self, reg: GpRegs) -> u32 {
+        cpu_get_reg32(self.handle, reg as _)
+    }
+
+    pub unsafe fn set_reg32(&self, reg: GpRegs, v: u32) {
+        cpu_set_reg32(self.handle, reg as _, v)
+    }
+
+    pub unsafe fn get_reg16(&self, reg: GpRegs) -> u16 {
+        cpu_get_reg16(self.handle, reg as _)
+    }
+
+    pub unsafe fn set_reg16(&self, reg: GpRegs, v: u16) {
+        cpu_set_reg16(self.handle, reg as _, v)
+    }
 
     pub unsafe fn rip(&self) -> u64 {
         cpu_get_pc(self.handle)

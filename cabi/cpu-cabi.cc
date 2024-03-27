@@ -70,6 +70,10 @@ BOCHSAPI void cpu_set_mode(unsigned id) {
 
 // general purpose regs
 
+BOCHSAPI unsigned cpu_total_gpregs() {
+    return BX_GENERAL_REGISTERS;
+}
+
 BOCHSAPI bx_address cpu_get_pc(unsigned id) {
     return BX_CPU(id)->get_instruction_pointer();
 }
@@ -90,6 +94,22 @@ BOCHSAPI Bit64u cpu_get_reg64(unsigned id, unsigned reg) {
 
 BOCHSAPI void cpu_set_reg64(unsigned id, unsigned reg, Bit64u val) {
     BX_CPU(id)->set_reg64(reg, val);
+}
+
+BOCHSAPI Bit32u cpu_get_reg32(unsigned id, unsigned reg) {
+    return BX_CPU(id)->get_reg32(reg);
+}
+
+BOCHSAPI void cpu_set_reg32(unsigned id, unsigned reg, Bit32u val) {
+    BX_CPU(id)->set_reg32(reg, val);
+}
+
+BOCHSAPI Bit16u cpu_get_reg16(unsigned id, unsigned reg) {
+    return BX_CPU(id)->get_reg16(reg);
+}
+
+BOCHSAPI void cpu_set_reg16(unsigned id, unsigned reg, Bit16u val) {
+    BX_CPU(id)->set_reg16(reg, val);
 }
 
 BOCHSAPI Bit32u cpu_get_eflags(unsigned id) {
