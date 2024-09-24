@@ -240,8 +240,8 @@ pub trait Hooks {
     fn repeat_iteration(&mut self, _id: u32, _ins: *mut c_void) {}
 
     fn inp(&mut self, _addr: u16, _len: usize) {}
-    fn inp2(&mut self, _addr: u16, _len: usize, _val: u32) {}
-    fn outp(&mut self, _addr: u16, _len: usize, _val: u32) {}
+    fn inp2(&mut self, _addr: u16, _len: usize, _val: &mut u32) {}
+    fn outp(&mut self, _addr: u16, _len: usize, _val: &mut u32) {}
 
     fn lin_access(
         &mut self,
@@ -646,14 +646,14 @@ unsafe extern "C-unwind" fn bx_instr_inp(addr: u16, len: u32) {
 }
 
 #[no_mangle]
-unsafe extern "C-unwind" fn bx_instr_inp2(addr: u16, len: u32, val: u32) {
+unsafe extern "C-unwind" fn bx_instr_inp2(addr: u16, len: u32, val: &mut u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.inp2(addr, len as usize, val));
 }
 
 #[no_mangle]
-unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
+unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: &mut u32) {
     hooks()
         .iter_mut()
         .for_each(|x| x.outp(addr, len as usize, val));
