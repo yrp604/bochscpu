@@ -22,8 +22,9 @@ pub const fn phy_mask(gpa: PhyAddress) -> PhyAddress {
 }
 
 #[ctor]
-static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> =
-    SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set")));
+static FAULT: SyncUnsafeCell<Box<dyn FnMut(PhyAddress)>> = unsafe {
+    SyncUnsafeCell::new(Box::new(|_| panic!("no missing_page function set")))
+};
 
 const fn page_off(a: PhyAddress) -> (PhyAddress, usize) {
     (a & !0xfff, a as usize & 0xfff)

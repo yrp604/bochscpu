@@ -10,7 +10,7 @@ crate-type = ["dylib", "rlib"]
 
 [dependencies]
 blake3 = "1"
-ctor = "0.1"
+ctor = "0.3"
 fnv = "1"
 lazy_static = "1"
 log = { version = "0.4", features = ["release_max_level_off"] }
