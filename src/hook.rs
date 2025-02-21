@@ -3,9 +3,9 @@ use std::hint::unreachable_unchecked;
 use std::mem;
 use std::slice;
 
+use crate::NUM_CPUS;
 use crate::cpu::{cpu_bail, cpu_exception};
 use crate::syncunsafecell::SyncUnsafeCell;
-use crate::NUM_CPUS;
 use crate::{Address, PhyAddress};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -17,14 +17,16 @@ pub(crate) enum HookEvent {
 
 #[ctor]
 static HOOK_EVENTS: SyncUnsafeCell<Vec<Option<HookEvent>>> =
-    SyncUnsafeCell::new(vec![None; NUM_CPUS]);
+    unsafe { SyncUnsafeCell::new(vec![None; NUM_CPUS]) };
 
 pub(crate) unsafe fn hook_event(id: u32) -> &'static mut Option<HookEvent> {
-    &mut (*(HOOK_EVENTS.0.get()))[id as usize]
+    unsafe { &mut (*(HOOK_EVENTS.0.get()))[id as usize] }
 }
 
 pub(crate) unsafe fn set_hook_event(id: u32, he: Option<HookEvent>) {
-    *hook_event(id) = he;
+    unsafe {
+        *hook_event(id) = he;
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
@@ -271,135 +273,163 @@ pub trait Hooks {
 static HOOKS: SyncUnsafeCell<Vec<&mut dyn Hooks>> = SyncUnsafeCell::new(Vec::new());
 
 unsafe fn hooks() -> &'static mut Vec<&'static mut dyn Hooks> {
-    &mut *(HOOKS.0.get())
+    unsafe { &mut *(HOOKS.0.get()) }
 }
 
 pub(crate) unsafe fn register<'a>(h: &'a mut dyn Hooks) {
-    // we need to extend the lifetime of this hook object to 'static so we can insert it
-    let hook = mem::transmute::<&'a mut dyn Hooks, &'static mut dyn Hooks>(h);
-    hooks().push(hook);
+    unsafe {
+        // we need to extend the lifetime of this hook object to 'static so we can insert it
+        let hook = mem::transmute::<&'a mut dyn Hooks, &'static mut dyn Hooks>(h);
+        hooks().push(hook);
+    }
 }
 
 pub(crate) unsafe fn clear() {
-    hooks().clear();
+    unsafe {
+        hooks().clear();
+    }
 }
 
 // these should not be callable from the main cpu, thus shouldnt be hitable...
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn bx_instr_init_env() {}
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn bx_instr_exit_env() {}
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn bx_instr_initialize(_: u32) {}
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn bx_instr_exit(_: u32) {}
 
 //
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_reset(cpu: u32, ty: u32) {
-    let src: ResetSource = ty.into();
+    unsafe {
+        let src: ResetSource = ty.into();
 
-    // this is kind of awkward -- we call reset during cpu init to initialize
-    // parts of it, but the cpu is half-initialized when this callback gets
-    // fired, so this crashes. We're going to assume that we're the only ones
-    // that can do hardware resets, and only call hooks for software resets
-    if src == ResetSource::Hardware {
-        return;
-    }
+        // this is kind of awkward -- we call reset during cpu init to initialize
+        // parts of it, but the cpu is half-initialized when this callback gets
+        // fired, so this crashes. We're going to assume that we're the only ones
+        // that can do hardware resets, and only call hooks for software resets
+        if src == ResetSource::Hardware {
+            return;
+        }
 
-    hooks().iter_mut().for_each(|x| x.reset(cpu, src));
+        hooks().iter_mut().for_each(|x| x.reset(cpu, src));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_hlt(cpu: u32) {
-    hooks().iter_mut().for_each(|x| x.hlt(cpu));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.hlt(cpu));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32, flags: u32) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.mwait(cpu, addr, len as usize, flags));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.mwait(cpu, addr, len as usize, flags));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_cnear_branch_taken(
     cpu: u32,
     branch_eip: Address,
     new_eip: Address,
 ) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.cnear_branch_taken(cpu, branch_eip, new_eip));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.cnear_branch_taken(cpu, branch_eip, new_eip));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_cnear_branch_not_taken(
     cpu: u32,
     branch_eip: Address,
     new_eip: Address,
 ) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.cnear_branch_not_taken(cpu, branch_eip, new_eip));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.cnear_branch_not_taken(cpu, branch_eip, new_eip));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_ucnear_branch(
     cpu: u32,
     what: u32,
     branch_eip: Address,
     new_eip: Address,
 ) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.ucnear_branch(cpu, what.into(), branch_eip, new_eip));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.ucnear_branch(cpu, what.into(), branch_eip, new_eip));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_far_branch(
     cpu: u32,
     what: u32,
@@ -408,19 +438,23 @@ unsafe extern "C-unwind" fn bx_instr_far_branch(
     new_cs: u16,
     new_eip: Address,
 ) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.far_branch(cpu, what.into(), (prev_cs, prev_eip), (new_cs, new_eip)));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.far_branch(cpu, what.into(), (prev_cs, prev_eip), (new_cs, new_eip)));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_opcode(
     cpu: u32,
     i: *mut c_void,
@@ -429,65 +463,81 @@ unsafe extern "C-unwind" fn bx_instr_opcode(
     is32: u32,
     is64: u32,
 ) {
-    hooks().iter_mut().for_each(|x| {
-        x.opcode(
-            cpu,
-            i,
-            slice::from_raw_parts(opcode, len as usize),
-            is32 != 0,
-            is64 != 0,
-        )
-    });
+    unsafe {
+        hooks().iter_mut().for_each(|x| {
+            x.opcode(
+                cpu,
+                i,
+                slice::from_raw_parts(opcode, len as usize),
+                is32 != 0,
+                is64 != 0,
+            )
+        });
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_interrupt(cpu: u32, vector: u32) {
-    hooks().iter_mut().for_each(|x| x.interrupt(cpu, vector));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.interrupt(cpu, vector));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_exception(cpu: u32, vector: u32, error_code: u32) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.exception(cpu, vector, error_code));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.exception(cpu, vector, error_code));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_hwinterrupt(cpu: u32, vector: u32, cs: u16, eip: Address) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.hw_interrupt(cpu, vector, (cs, eip)));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.hw_interrupt(cpu, vector, (cs, eip)));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress) {
     let ty = what.into();
     let maybe_cr3 = match ty {
@@ -514,92 +564,118 @@ extern "C-unwind" fn bx_instr_tlb_cntrl(cpu: u32, what: u32, new_cr3: PhyAddress
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_cache_cntrl(cpu: u32, what: u32) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.cache_cntrl(cpu, what.into()));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.cache_cntrl(cpu, what.into()));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_prefetch_hint(cpu: u32, what: u32, seg: u32, offset: Address) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.prefetch_hint(cpu, what.into(), seg, offset));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.prefetch_hint(cpu, what.into(), seg, offset));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
-    }
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_clflush(cpu: u32, laddr: Address, paddr: PhyAddress) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.clflush(cpu, laddr, paddr));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.clflush(cpu, laddr, paddr));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_before_execution(cpu: u32, i: *mut c_void) {
-    hooks().iter_mut().for_each(|x| x.before_execution(cpu, i));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.before_execution(cpu, i));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_after_execution(cpu: u32, i: *mut c_void) {
-    hooks().iter_mut().for_each(|x| x.after_execution(cpu, i));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.after_execution(cpu, i));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_repeat_iteration(cpu: u32, i: *mut c_void) {
-    hooks().iter_mut().for_each(|x| x.repeat_iteration(cpu, i));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.repeat_iteration(cpu, i));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_lin_access(
     cpu: u32,
     lin: Address,
@@ -608,19 +684,23 @@ unsafe extern "C-unwind" fn bx_instr_lin_access(
     memtype: u32,
     rw: u32,
 ) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.lin_access(cpu, lin, phy, len as usize, memtype.into(), rw.into()));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.lin_access(cpu, lin, phy, len as usize, memtype.into(), rw.into()));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_phy_access(
     cpu: u32,
     phy: Address,
@@ -628,59 +708,77 @@ unsafe extern "C-unwind" fn bx_instr_phy_access(
     memtype: u32,
     rw: u32,
 ) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.phy_access(cpu, phy, len as usize, memtype.into(), rw.into()));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.phy_access(cpu, phy, len as usize, memtype.into(), rw.into()));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_inp(addr: u16, len: u32) {
-    hooks().iter_mut().for_each(|x| x.inp(addr, len as usize));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.inp(addr, len as usize));
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_inp2(addr: u16, len: u32, val: u32) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.inp2(addr, len as usize, val));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.inp2(addr, len as usize, val));
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.outp(addr, len as usize, val));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.outp(addr, len as usize, val));
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_wrmsr(cpu: u32, addr: u32, value: u64) {
-    hooks().iter_mut().for_each(|x| x.wrmsr(cpu, addr, value));
+    unsafe {
+        hooks().iter_mut().for_each(|x| x.wrmsr(cpu, addr, value));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_vmexit(cpu: u32, reason: u32, qualification: u64) {
-    hooks()
-        .iter_mut()
-        .for_each(|x| x.vmexit(cpu, reason, qualification));
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.vmexit(cpu, reason, qualification));
 
-    if let Some(e) = hook_event(cpu).take() {
-        match e {
-            HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-            HookEvent::Exception(vector, error) => cpu_exception(cpu, vector, error.unwrap_or(0)),
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
         }
     }
 }

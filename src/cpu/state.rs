@@ -1,7 +1,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::cpu::{GlobalSeg, Seg, Zmm, Float80};
+use crate::cpu::{Float80, GlobalSeg, Seg, Zmm};
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
