@@ -6,12 +6,6 @@ use std::ptr;
 use crate::NUM_CPUS;
 use crate::params::*;
 
-macro_rules! cstr {
-    ($s:literal) => {
-        unsafe { CStr::from_bytes_with_nul_unchecked(concat!($s, "\0").as_bytes()) }
-    };
-}
-
 lazy_static! {
     static ref PARAMS_ENUM: BTreeMap<&'static str, ParamEnum> = {
         let mut m = BTreeMap::new();
@@ -20,36 +14,36 @@ lazy_static! {
         m.insert(
             "cpu.model",
             ParamEnum::new(
-                cstr!("model"),
+                c"model",
                 &[
-                    cstr!("bx_generic"),
-                    cstr!("pentium"),
-                    cstr!("pentium_mxx"),
-                    cstr!("amd_k6_2_chomper"),
-                    cstr!("p2_klamath"),
-                    cstr!("p3_katmai"),
-                    cstr!("p4_willamette"),
-                    cstr!("core_duo_t2500_yonah"),
-                    cstr!("atom_n270"),
-                    cstr!("p4_prescott_celeron_336"),
-                    cstr!("athlon64_clawhammer"),
-                    cstr!("athlon64_venice"),
-                    cstr!("turion64_tyler"),
-                    cstr!("phenom_8650_toliman"),
-                    cstr!("core2_penryn_t9600"),
-                    cstr!("corei5_lynnfield_750"),
-                    cstr!("corei5_arrandale_m520"),
-                    cstr!("corei7_sandy_bridge_2600k"),
-                    cstr!("zambezi"),
-                    cstr!("trinity_apu"),
-                    cstr!("ryzen"),
-                    cstr!("corei7_ivy_bridge_3770k"),
-                    cstr!("corei7_haswell_4770"),
-                    cstr!("broadwell_ult"),
-                    cstr!("corei7_skylake_x"),
-                    cstr!("corei3_cnl"),
-                    cstr!("corei7_icelake_u"),
-                    cstr!("tigerlake"),
+                    c"bx_generic",
+                    c"pentium",
+                    c"pentium_mxx",
+                    c"amd_k6_2_chomper",
+                    c"p2_klamath",
+                    c"p3_katmai",
+                    c"p4_willamette",
+                    c"core_duo_t2500_yonah",
+                    c"atom_n270",
+                    c"p4_prescott_celeron_336",
+                    c"athlon64_clawhammer",
+                    c"athlon64_venice",
+                    c"turion64_tyler",
+                    c"phenom_8650_toliman",
+                    c"core2_penryn_t9600",
+                    c"corei5_lynnfield_750",
+                    c"corei5_arrandale_m520",
+                    c"corei7_sandy_bridge_2600k",
+                    c"zambezi",
+                    c"trinity_apu",
+                    c"ryzen",
+                    c"corei7_ivy_bridge_3770k",
+                    c"corei7_haswell_4770",
+                    c"broadwell_ult",
+                    c"corei7_skylake_x",
+                    c"corei3_cnl",
+                    c"corei7_icelake_u",
+                    c"tigerlake",
                 ],
                 27 // default to tigerlake
             )
@@ -58,12 +52,12 @@ lazy_static! {
         m.insert(
             "cpuid.apic",
             ParamEnum::new(
-                cstr!("apic"),
+                c"apic",
                 &[
-                    cstr!("legacy"),
-                    cstr!("xapic"),
-                    cstr!("xapic_ext"),
-                    cstr!("x2apic"),
+                    c"legacy",
+                    c"xapic",
+                    c"xapic_ext",
+                    c"x2apic",
                 ],
                 3
             )
@@ -72,17 +66,17 @@ lazy_static! {
         m.insert(
             "cpuid.simd",
             ParamEnum::new(
-                cstr!("simd"),
+                c"simd",
                 &[
-                    cstr!("none"),
-                    cstr!("sse"),
-                    cstr!("sse2"),
-                    cstr!("sse3"),
-                    cstr!("ssse3"),
-                    cstr!("sse4_1"),
-                    cstr!("sse4_2"),
-                    cstr!("avx"),
-                    cstr!("avx2"),
+                    c"none",
+                    c"sse",
+                    c"sse2",
+                    c"sse3",
+                    c"ssse3",
+                    c"sse4_1",
+                    c"sse4_2",
+                    c"avx",
+                    c"avx2",
                 ],
                 8
             )
@@ -94,19 +88,19 @@ lazy_static! {
     static ref PARAMS_NUM: BTreeMap<&'static str, ParamNum> = {
         let mut m = BTreeMap::new();
 
-        m.insert("cpu.n_threads", ParamNum::new(cstr!("n_threads"), 1, 4, 1));
-        m.insert("cpu.n_cores", ParamNum::new(cstr!("n_cores"), 1, 8, 1));
-        m.insert("cpu.n_processors", ParamNum::new(cstr!("n_processors"), 1, NUM_CPUS as u64, 1));
-        m.insert("cpu.quantum", ParamNum::new(cstr!("quantum"), 1, 32, 16));
+        m.insert("cpu.n_threads", ParamNum::new(c"n_threads", 1, 4, 1));
+        m.insert("cpu.n_cores", ParamNum::new(c"n_cores", 1, 8, 1));
+        m.insert("cpu.n_processors", ParamNum::new(c"n_processors", 1, NUM_CPUS as u64, 1));
+        m.insert("cpu.quantum", ParamNum::new(c"quantum", 1, 32, 16));
 
-        m.insert("cpuid.level", ParamNum::new(cstr!("level"), 5, 6, 6));
-        m.insert("cpuid.vmx", ParamNum::new(cstr!("vmx"), 0, 2, 2));
-        m.insert("cpuid.bmi", ParamNum::new(cstr!("bmi"), 0, 2, 2));
+        m.insert("cpuid.level", ParamNum::new(c"level", 5, 6, 6));
+        m.insert("cpuid.vmx", ParamNum::new(c"vmx", 0, 2, 2));
+        m.insert("cpuid.bmi", ParamNum::new(c"bmi", 0, 2, 2));
 
         // cannot find values for these vvv
-        m.insert("cpuid.stepping", ParamNum::new(cstr!("stepping"), 0, 0, 0));
-        m.insert("cpuid.model", ParamNum::new(cstr!("model"), 0, 0, 0));
-        m.insert("cpuid.family", ParamNum::new(cstr!("family"), 0, 6, 6));
+        m.insert("cpuid.stepping", ParamNum::new(c"stepping", 0, 0, 0));
+        m.insert("cpuid.model", ParamNum::new(c"model", 0, 0, 0));
+        m.insert("cpuid.family", ParamNum::new(c"family", 0, 6, 6));
 
         m
     };
@@ -114,36 +108,36 @@ lazy_static! {
     static ref PARAMS_BOOL: BTreeMap<&'static str, ParamBool> = {
         let mut m = BTreeMap::new();
 
-        m.insert("cpuid.mmx", ParamBool::new(cstr!("mmx"), true));
-        m.insert("cpuid.sse4a", ParamBool::new(cstr!("sse4a"), true));
-        m.insert("cpuid.misaligned_sse", ParamBool::new(cstr!("misaligned_sse"), true));
-        m.insert("cpuid.sep", ParamBool::new(cstr!("sep"), true));
-        m.insert("cpuid.xsave", ParamBool::new(cstr!("xsave"), true));
-        m.insert("cpuid.xsaveopt", ParamBool::new(cstr!("xsaveopt"), true));
-        m.insert("cpuid.aes", ParamBool::new(cstr!("aes"), true));
-        m.insert("cpuid.sha", ParamBool::new(cstr!("sha"), true));
-        m.insert("cpuid.adx", ParamBool::new(cstr!("adx"), true));
-        m.insert("cpuid.x86_64", ParamBool::new(cstr!("x86_64"), true));
-        m.insert("cpuid.fsgsbase", ParamBool::new(cstr!("fsgsbase"), true));
-        m.insert("cpuid.pcid", ParamBool::new(cstr!("pcid"), true));
-        m.insert("cpuid.smep", ParamBool::new(cstr!("smep"), true));
-        m.insert("cpuid.smap", ParamBool::new(cstr!("smap"), true));
+        m.insert("cpuid.mmx", ParamBool::new(c"mmx", true));
+        m.insert("cpuid.sse4a", ParamBool::new(c"sse4a", true));
+        m.insert("cpuid.misaligned_sse", ParamBool::new(c"misaligned_sse", true));
+        m.insert("cpuid.sep", ParamBool::new(c"sep", true));
+        m.insert("cpuid.xsave", ParamBool::new(c"xsave", true));
+        m.insert("cpuid.xsaveopt", ParamBool::new(c"xsaveopt", true));
+        m.insert("cpuid.aes", ParamBool::new(c"aes", true));
+        m.insert("cpuid.sha", ParamBool::new(c"sha", true));
+        m.insert("cpuid.adx", ParamBool::new(c"adx", true));
+        m.insert("cpuid.x86_64", ParamBool::new(c"x86_64", true));
+        m.insert("cpuid.fsgsbase", ParamBool::new(c"fsgsbase", true));
+        m.insert("cpuid.pcid", ParamBool::new(c"pcid", true));
+        m.insert("cpuid.smep", ParamBool::new(c"smep", true));
+        m.insert("cpuid.smap", ParamBool::new(c"smap", true));
 
-        m.insert("cpuid.mwait", ParamBool::new(cstr!("mwait"), false));
-        m.insert("cpuid.movbe", ParamBool::new(cstr!("movbe"), false));
-        m.insert("cpuid.1g_pages", ParamBool::new(cstr!("1g_pages"), false));
-        m.insert("cpuid.avx_f16c", ParamBool::new(cstr!("avx_f16c"), true));
-        m.insert("cpuid.avx_fma", ParamBool::new(cstr!("avx_fma"), true));
-        m.insert("cpuid.fma4", ParamBool::new(cstr!("fma4"), false));
-        m.insert("cpuid.xop", ParamBool::new(cstr!("xop"), false));
-        m.insert("cpuid.tbm", ParamBool::new(cstr!("tbm"), false));
+        m.insert("cpuid.mwait", ParamBool::new(c"mwait", false));
+        m.insert("cpuid.movbe", ParamBool::new(c"movbe", false));
+        m.insert("cpuid.1g_pages", ParamBool::new(c"1g_pages", false));
+        m.insert("cpuid.avx_f16c", ParamBool::new(c"avx_f16c", true));
+        m.insert("cpuid.avx_fma", ParamBool::new(c"avx_fma", true));
+        m.insert("cpuid.fma4", ParamBool::new(c"fma4", false));
+        m.insert("cpuid.xop", ParamBool::new(c"xop", false));
+        m.insert("cpuid.tbm", ParamBool::new(c"tbm", false));
 
-        m.insert("cpu.cpuid_limit_winnt", ParamBool::new(cstr!("cpuid_limit_winnt"), false));
-        m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_bad_msrs"), false));
+        m.insert("cpu.cpuid_limit_winnt", ParamBool::new(c"cpuid_limit_winnt", false));
+        m.insert("cpu.ignore_bad_msrs", ParamBool::new(c"ignore_bad_msrs", false));
         // this needs to be set to false, because the reset path calls DEV_cmos_get_reg(0x0f),
         // which segfaults as I haven't implemented that stub yet...
-        m.insert("cpu.reset_on_triple_fault", ParamBool::new(cstr!("reset_on_triple_fault"), false));
-        m.insert("cpu.ignore_bad_msrs", ParamBool::new(cstr!("ignore_base_msrs"), true));
+        m.insert("cpu.reset_on_triple_fault", ParamBool::new(c"reset_on_triple_fault", false));
+        m.insert("cpu.ignore_bad_msrs", ParamBool::new(c"ignore_base_msrs", true));
 
         m
     };
@@ -152,12 +146,12 @@ lazy_static! {
         let mut m = BTreeMap::new();
 
         // this key just needs to exist, doesnt need to be a valid file name
-        m.insert("cpu.msrs", ParamString::new(cstr!("msrs"), cstr!("")));
+        m.insert("cpu.msrs", ParamString::new(c"msrs", c""));
         m.insert(
             "cpu.brand_string",
             ParamString::new(
-                cstr!("Intel(R) Core(TM) i7-7800X CPU @ 3.50GHz\0\0\0\0\0\0\0\0"),
-                cstr!("")
+                c"Intel(R) Core(TM) i7-7800X CPU @ 3.50GHz",
+                c""
             )
         );
 
