@@ -1,4 +1,4 @@
-use std::ffi::{c_void, CStr};
+use std::ffi::{CStr, c_void};
 use std::marker::Sync;
 use std::os::raw::c_char;
 use std::ptr;

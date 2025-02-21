@@ -1,8 +1,8 @@
 use std::mem;
 use std::slice;
 
-use crate::mem::phy_translate;
 use crate::PhyAddress;
+use crate::mem::phy_translate;
 
 pub fn phy_read_u64(gpa: PhyAddress) -> u64 {
     let mut buf = [0; mem::size_of::<u64>()];
