@@ -38,6 +38,20 @@ bool BX_MEM_C::dbg_fetch_mem(BX_CPU_C *cpu, bx_phy_address addr, unsigned len, B
     return false;
 }
 
+
+bool BX_MEM_C::registerMemoryHandlers(
+    void *param,
+    memory_handler_t read_handler,
+    memory_handler_t write_handler,
+    memory_direct_access_handler_t da_handler,
+    bx_phy_address begin_addr,
+    bx_phy_address end_addr)
+{
+    assert(false);
+
+    return false;
+}
+
 Bit64u BX_MEMORY_STUB_C::get_memory_len()
 {
     return (BX_MEM_THIS len);
