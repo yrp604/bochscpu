@@ -22,6 +22,14 @@ extern "C" {
 }
 }
 
+int logfunctions::default_onoff[N_LOGLEV] =
+{
+  ACT_IGNORE,  // ignore debug
+  ACT_REPORT,  // report info
+  ACT_REPORT,  // report error
+  ACT_FATAL    // on panic, quit
+};
+
 logfunctions::logfunctions(void) {}
 logfunctions::~logfunctions(void) {}
 

@@ -154,12 +154,23 @@ lazy_static! {
         // this key just needs to exist, doesnt need to be a valid file name
         m.insert("cpu.msrs", ParamString::new(cstr!("msrs"), cstr!("")));
         m.insert(
-            "cpuid.brand_string",
+            "cpu.brand_string",
             ParamString::new(
                 cstr!("Intel(R) Core(TM) i7-7800X CPU @ 3.50GHz\0\0\0\0\0\0\0\0"),
                 cstr!("")
             )
         );
+
+        m.insert(
+            "cpu.add_features",
+            ParamString::new(c"add_features", c"")
+        );
+
+        m.insert(
+            "cpu.exclude_features",
+            ParamString::new(c"exclude_features", c"")
+        );
+
 
         m
     };

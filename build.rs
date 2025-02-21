@@ -260,4 +260,5 @@ fn main() {
     println!("cargo:rustc-link-lib=static=fpu");
     println!("cargo:rustc-link-lib=static=cpudb");
     println!("cargo:rustc-link-lib=static=avx");
+    println!("cargo:rustc-link-lib=static=softfloat");
 }
