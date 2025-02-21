@@ -176,7 +176,7 @@ lazy_static! {
     };
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn sim_get_param_enum(p: *const c_char) -> *mut c_void {
     let s = unsafe {
         assert!(!p.is_null());
@@ -195,7 +195,7 @@ extern "C-unwind" fn sim_get_param_enum(p: *const c_char) -> *mut c_void {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn sim_get_param_num(p: *const c_char) -> *mut c_void {
     let s = unsafe {
         assert!(!p.is_null());
@@ -214,7 +214,7 @@ extern "C-unwind" fn sim_get_param_num(p: *const c_char) -> *mut c_void {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn sim_get_param_bool(p: *const c_char) -> *mut c_void {
     let s = unsafe {
         assert!(!p.is_null());
@@ -233,7 +233,7 @@ extern "C-unwind" fn sim_get_param_bool(p: *const c_char) -> *mut c_void {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn sim_get_param_string(p: *const c_char) -> *mut c_void {
     let s = unsafe {
         assert!(!p.is_null());

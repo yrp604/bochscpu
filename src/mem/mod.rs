@@ -30,25 +30,25 @@ const fn page_off(a: PhyAddress) -> (PhyAddress, usize) {
     (a & !0xfff, a as usize & 0xfff)
 }
 
-pub unsafe fn fault(gpa: PhyAddress) {
+pub unsafe fn fault(gpa: PhyAddress) { unsafe {
     let f = FAULT.0.get();
     (**f)(gpa);
-}
+}}
 
-pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) {
+pub unsafe fn page_insert(gpa: PhyAddress, hva: *mut u8) { unsafe {
     assert_eq!(hva.align_offset(0x1000), 0);
 
     mem_insert(gpa, hva)
-}
+}}
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn mem_guest_to_host(cpu: u32, gpa: PhyAddress, _rw: u32) -> *mut u8 {
     trace!("translating guest phys {:x}...", gpa);
 
     unsafe { guest_phy_translate(cpu, gpa) }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn mem_read_phy(cpu: u32, gpa: PhyAddress, sz: u32, dst: *mut u8) {
     trace!("mem read {} bytes from phys {:x}...", sz, gpa);
 
@@ -64,7 +64,7 @@ extern "C-unwind" fn mem_read_phy(cpu: u32, gpa: PhyAddress, sz: u32, dst: *mut 
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C-unwind" fn mem_write_phy(cpu: u32, gpa: PhyAddress, sz: u32, src: *const u8) {
     trace!("mem write {} bytes to phys {:x}...", sz, gpa);
 
@@ -80,7 +80,7 @@ extern "C-unwind" fn mem_write_phy(cpu: u32, gpa: PhyAddress, sz: u32, src: *con
     }
 }
 
-pub unsafe fn guest_phy_translate(cpu: u32, gpa: PhyAddress) -> *mut u8 {
+pub unsafe fn guest_phy_translate(cpu: u32, gpa: PhyAddress) -> *mut u8 { unsafe {
     // i think this is needed because bochs will call into this with high bits
     // set?
     let real_gpa = gpa & 0x000f_ffff_ffff_ffff;
@@ -97,12 +97,12 @@ pub unsafe fn guest_phy_translate(cpu: u32, gpa: PhyAddress) -> *mut u8 {
     }
 
     resolve_hva(real_gpa)
-}
+}}
 
 // this function exists to split translations happening by the emulator and
 // those requested by the guest. Emulator translations requests do not have an
 // associated cpu and thus cannot be killed by the page fault hook.
-pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8 {
+pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8 { unsafe {
     // i think this is needed because bochs will call into this with high bits
     // set?
     let real_gpa = phy_mask(gpa);
@@ -114,8 +114,8 @@ pub unsafe fn phy_translate(gpa: PhyAddress) -> *mut u8 {
     fault(real_gpa);
 
     resolve_hva(real_gpa)
-}
+}}
 
-pub unsafe fn missing_page<T: FnMut(PhyAddress) + 'static>(f: T) {
+pub unsafe fn missing_page<T: FnMut(PhyAddress) + 'static>(f: T) { unsafe {
     *(FAULT.0.get()) = Box::new(f);
-}
+}}

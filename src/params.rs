@@ -3,7 +3,7 @@ use std::marker::Sync;
 use std::os::raw::c_char;
 use std::ptr;
 
-extern "C-unwind" {
+unsafe extern "C-unwind" {
     fn sim_new_param_enum(name: *const c_char, val: *const *const c_char, idx: u32) -> *mut c_void;
     fn sim_delete_param_enum(name: *mut c_void);
 

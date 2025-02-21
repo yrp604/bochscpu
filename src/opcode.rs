@@ -9,7 +9,7 @@ pub enum Opcode {
     Inserted = 1,
 }
 
-extern "C-unwind" {
+unsafe extern "C-unwind" {
     pub fn instr_bx_opcode(_: *const c_void) -> u32;
     pub fn instr_imm16(_: *const c_void) -> u16;
     pub fn instr_imm32(_: *const c_void) -> u32;
