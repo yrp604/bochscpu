@@ -15,6 +15,9 @@ lazy_static = "1"
 log = { version = "0.4", features = ["release_max_level_off"] }
 serde = { version = "1", features = ["derive"], optional = true }
 
+[features]
+win_static_crt = []
+
 [build-dependencies]
 cc = "1"
 
