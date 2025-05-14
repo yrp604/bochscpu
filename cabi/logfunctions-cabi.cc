@@ -16,7 +16,6 @@ namespace rust {
 extern "C" {
 	void logfunctions_error(const char *);
 	void logfunctions_ldebug(const char *);
-	void logfunctions_lwarn(const char *);
 	void logfunctions_info(const char *);
 	void logfunctions_panic(const char *);
 	void logfunctions_fatal1(const char *);
@@ -83,19 +82,6 @@ void logfunctions::ldebug(const char *fmt, ...) {
 	va_end(args);
 
 	rust::logfunctions_ldebug(buf);
-#endif
-}
-
-void logfunctions::lwarn(const char *fmt, ...) {
-#ifndef RUST_CC_RELEASE
-	char buf[0x1000];
-
-	va_list args;
-	va_start(args, fmt);
-	vsnprintf(buf, sizeof buf, fmt, args);
-	va_end(args);
-
-	rust::logfunctions_lwarn(buf);
 #endif
 }
 

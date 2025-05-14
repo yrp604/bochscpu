@@ -246,7 +246,7 @@ static CPU_TRACKING: SyncUnsafeCell<Vec<Tracking>> =
     unsafe { SyncUnsafeCell::new(vec![Tracking::default(); NUM_CPUS]) };
 
 unsafe fn cpu_tracking(id: u32) -> &'static mut Tracking {
-    unsafe { &mut (&mut (*(CPU_TRACKING.0.get())))[id as usize] }
+    unsafe { &mut (*(CPU_TRACKING.0.get()))[id as usize] }
 }
 
 pub(crate) unsafe fn run_state(id: u32) -> RunState {
