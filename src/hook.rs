@@ -20,7 +20,7 @@ static HOOK_EVENTS: SyncUnsafeCell<Vec<Option<HookEvent>>> =
     unsafe { SyncUnsafeCell::new(vec![None; NUM_CPUS]) };
 
 pub(crate) unsafe fn hook_event(id: u32) -> &'static mut Option<HookEvent> {
-    unsafe { &mut (*(HOOK_EVENTS.0.get()))[id as usize] }
+    unsafe { &mut (&mut (*(HOOK_EVENTS.0.get())))[id as usize] }
 }
 
 pub(crate) unsafe fn set_hook_event(id: u32, he: Option<HookEvent>) {
@@ -264,6 +264,8 @@ pub trait Hooks {
         _rw: MemAccess,
     ) {
     }
+
+    fn cpuid(&mut self, _id: u32) {}
 
     fn wrmsr(&mut self, _id: u32, _msr: u32, _val: u64) {}
 
@@ -746,6 +748,15 @@ unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
         hooks()
             .iter_mut()
             .for_each(|x| x.outp(addr, len as usize, val));
+    }
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C-unwind" fn bx_instr_cpuid(cpu: u32) {
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.cpuid(cpu));
     }
 }
 
