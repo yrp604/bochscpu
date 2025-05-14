@@ -4,7 +4,7 @@ fn main() {
     // TODO figure out why the CFLAGS arent being inherited...
     // .flag("-fsanitize=address").flag("-Wno-unused-parameter")
     //
-    const WIN_STATIC_CRT: bool = cfg!(feature = "win_static_crt");
+    const CRT_STATIC: bool = cfg!(target_feature = "crt-static");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
@@ -21,7 +21,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/cpu-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("cpu-cabi");
     println!("cargo:rustc-link-lib=static=cpu-cabi");
 
@@ -40,7 +40,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/mem-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("mem-cabi");
     println!("cargo:rustc-link-lib=static=mem-cabi");
 
@@ -59,7 +59,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/instr-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("instr-cabi");
     println!("cargo:rustc-link-lib=static=instr-cabi");
 
@@ -83,7 +83,7 @@ fn main() {
                 .include("bochs")
                 .include("bochs/instrument/bochscpu")
                 .file("cabi/logfunctions-cabi.cc")
-                .static_crt(WIN_STATIC_CRT)
+                .static_crt(CRT_STATIC)
                 .compile("logfunctions-cabi");
         }
         _ => {
@@ -103,7 +103,7 @@ fn main() {
                 .include("bochs")
                 .include("bochs/instrument/bochscpu")
                 .file("cabi/logfunctions-cabi.cc")
-                .static_crt(WIN_STATIC_CRT)
+                .static_crt(CRT_STATIC)
                 .compile("logfunctions-cabi");
         }
     }
@@ -124,7 +124,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/siminterface-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("siminterface-cabi");
     println!("cargo:rustc-link-lib=static=siminterface-cabi");
 
@@ -145,7 +145,7 @@ fn main() {
         .include("bochs/gui")
         .include("bochs/instrument/bochscpu")
         .file("cabi/paramtree.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("paramtree");
     println!("cargo:rustc-link-lib=static=paramtree");
 
@@ -164,7 +164,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/devices-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("devices-cabi");
     println!("cargo:rustc-link-lib=static=devices-cabi");
 
@@ -183,7 +183,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/dbg.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("dbg");
     println!("cargo:rustc-link-lib=static=dbg");
 
@@ -202,7 +202,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/gui.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("gui");
     println!("cargo:rustc-link-lib=static=gui");
 
@@ -221,7 +221,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/system-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("system-cabi");
     println!("cargo:rustc-link-lib=static=system-cabi");
 
@@ -240,7 +240,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/apic.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("apic");
     println!("cargo:rustc-link-lib=static=apic");
 
@@ -261,7 +261,7 @@ fn main() {
         .include("bochs")
         .include("bochs/instrument/bochscpu")
         .file("cabi/opcode-cabi.cc")
-        .static_crt(WIN_STATIC_CRT)
+        .static_crt(CRT_STATIC)
         .compile("opcode");
     println!("cargo:rustc-link-lib=static=opcode");
 
