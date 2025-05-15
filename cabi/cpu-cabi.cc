@@ -31,14 +31,11 @@ BOCHSAPI void cpu_new(unsigned id) {
     BX_CPU(id)->sanity_checks();
 
     BX_INSTR_INITIALIZE(id);
-
-    BX_CPU(id)->lapic = new bx_local_apic_c(BX_CPU(id) , id);
 }
 
 BOCHSAPI void cpu_delete(unsigned id) {
 #if BX_SUPPORT_SMP
 
-    delete BX_CPU(id)->lapic;
     BX_CPU(id)->~BX_CPU_C();
     free(BX_CPU(id));
 
@@ -288,7 +285,9 @@ BOCHSAPI Bit32u cpu_get_cr8(unsigned id) {
 }
 
 BOCHSAPI void cpu_set_cr8(unsigned id, Bit32u v) {
+#if BX_SUPPORT_APIC
     BX_CPU(id)->lapic->set_tpr((v & 0xf) << 4);
+#endif
 }
 
 BOCHSAPI Bit32u cpu_get_efer(unsigned id) {
