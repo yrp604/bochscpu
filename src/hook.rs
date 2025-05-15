@@ -754,9 +754,7 @@ unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
 #[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_cpuid(cpu: u32) {
     unsafe {
-        hooks()
-            .iter_mut()
-            .for_each(|x| x.cpuid(cpu));
+        hooks().iter_mut().for_each(|x| x.cpuid(cpu));
     }
 }
 
