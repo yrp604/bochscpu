@@ -2,12 +2,18 @@ use std::collections::BTreeMap;
 use std::ffi::{CStr, c_void};
 use std::os::raw::c_char;
 use std::ptr;
+use std::sync::OnceLock;
 
 use crate::NUM_CPUS;
 use crate::params::*;
+use crate::syncunsafecell::{SyncUnsafeCell, ptr_to_ref};
 
-lazy_static! {
-    static ref PARAMS_ENUM: BTreeMap<&'static str, ParamEnum> = {
+static PARAMS_ENUM: OnceLock<SyncUnsafeCell<BTreeMap<&'static str, ParamEnum>>> = OnceLock::new();
+static PARAMS_NUM: OnceLock<SyncUnsafeCell<BTreeMap<&'static str, ParamNum>>> = OnceLock::new();
+static PARAMS_BOOL: OnceLock<SyncUnsafeCell<BTreeMap<&'static str, ParamBool>>> = OnceLock::new();
+static PARAMS_STRING: OnceLock<SyncUnsafeCell<BTreeMap<&'static str, ParamString>>> = OnceLock::new();
+
+fn init_params_enum() -> SyncUnsafeCell<BTreeMap<&'static str, ParamEnum>> {
         let mut m = BTreeMap::new();
 
         // from cpudb.h
@@ -82,10 +88,10 @@ lazy_static! {
             )
         );
 
-        m
-    };
+        SyncUnsafeCell::new(m)
+    }
 
-    static ref PARAMS_NUM: BTreeMap<&'static str, ParamNum> = {
+fn init_params_num() -> SyncUnsafeCell<BTreeMap<&'static str, ParamNum>> {
         let mut m = BTreeMap::new();
 
         m.insert("cpu.n_threads", ParamNum::new(c"n_threads", 1, 4, 1));
@@ -102,10 +108,11 @@ lazy_static! {
         m.insert("cpuid.model", ParamNum::new(c"model", 0, 0, 0));
         m.insert("cpuid.family", ParamNum::new(c"family", 0, 6, 6));
 
-        m
-    };
+        SyncUnsafeCell::new(m)
+    }
 
-    static ref PARAMS_BOOL: BTreeMap<&'static str, ParamBool> = {
+
+fn init_params_bool() -> SyncUnsafeCell<BTreeMap<&'static str, ParamBool>> {
         let mut m = BTreeMap::new();
 
         m.insert("cpuid.mmx", ParamBool::new(c"mmx", true));
@@ -139,10 +146,11 @@ lazy_static! {
         m.insert("cpu.reset_on_triple_fault", ParamBool::new(c"reset_on_triple_fault", false));
         m.insert("cpu.ignore_bad_msrs", ParamBool::new(c"ignore_base_msrs", true));
 
-        m
-    };
+        SyncUnsafeCell::new(m)
+    }
 
-    static ref PARAMS_STRING: BTreeMap<&'static str, ParamString> = {
+
+fn init_params_string() -> SyncUnsafeCell<BTreeMap<&'static str, ParamString>> {
         let mut m = BTreeMap::new();
 
         // this key just needs to exist, doesnt need to be a valid file name
@@ -166,9 +174,9 @@ lazy_static! {
         );
 
 
-        m
-    };
-}
+        SyncUnsafeCell::new(m)
+    }
+
 
 #[unsafe(no_mangle)]
 extern "C-unwind" fn sim_get_param_enum(p: *const c_char) -> *mut c_void {
@@ -180,7 +188,7 @@ extern "C-unwind" fn sim_get_param_enum(p: *const c_char) -> *mut c_void {
 
     trace!("looking up enum param for {}...", s);
 
-    match PARAMS_ENUM.get(&s) {
+    match unsafe { ptr_to_ref(PARAMS_ENUM.get_or_init(init_params_enum).0.get()) }.get(&s) {
         None => {
             warn!("no enum parameter: {}", s);
             ptr::null_mut::<c_void>()
@@ -199,7 +207,7 @@ extern "C-unwind" fn sim_get_param_num(p: *const c_char) -> *mut c_void {
 
     trace!("looking up num param for {}...", s);
 
-    match PARAMS_NUM.get(&s) {
+    match unsafe { ptr_to_ref(PARAMS_NUM.get_or_init(init_params_num).0.get()) }.get(&s) {
         None => {
             warn!("no num parameter: {}", s);
             ptr::null_mut::<c_void>()
@@ -218,7 +226,7 @@ extern "C-unwind" fn sim_get_param_bool(p: *const c_char) -> *mut c_void {
 
     trace!("looking up bool param for {}...", s);
 
-    match PARAMS_BOOL.get(&s) {
+    match unsafe { ptr_to_ref(PARAMS_BOOL.get_or_init(init_params_bool).0.get()) }.get(&s) {
         None => {
             warn!("no bool parameter: {}", s);
             ptr::null_mut::<c_void>()
@@ -237,7 +245,7 @@ extern "C-unwind" fn sim_get_param_string(p: *const c_char) -> *mut c_void {
 
     trace!("looking up string param for {}...", s);
 
-    match PARAMS_STRING.get(&s) {
+    match unsafe { ptr_to_ref(PARAMS_STRING.get_or_init(init_params_string).0.get()) }.get(&s) {
         None => {
             warn!("no string parameter: {}", s);
             ptr::null_mut::<c_void>()
