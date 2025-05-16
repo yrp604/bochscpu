@@ -5,7 +5,7 @@ use fnv::FnvHasher;
 
 use crate::PhyAddress;
 use crate::mem::page_off;
-use crate::syncunsafecell::SyncUnsafeCell;
+use crate::syncunsafecell::{SyncUnsafeCell, ptr_to_ref_mut};
 
 pub type FastMap64<K, V> = HashMap<K, V, BuildHasherDefault<FnvHasher>>;
 
@@ -14,7 +14,7 @@ pub static MEM: SyncUnsafeCell<FastMap64<PhyAddress, *mut u8>> =
     unsafe { SyncUnsafeCell::new(FastMap64::default()) };
 
 unsafe fn mem() -> &'static mut FastMap64<PhyAddress, *mut u8> {
-    unsafe { &mut (*(MEM.0.get())) }
+    unsafe { ptr_to_ref_mut(MEM.0.get()) }
 }
 
 pub unsafe fn resolve_hva(gpa: PhyAddress) -> *mut u8 {

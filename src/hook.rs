@@ -5,7 +5,7 @@ use std::slice;
 
 use crate::NUM_CPUS;
 use crate::cpu::{cpu_bail, cpu_exception};
-use crate::syncunsafecell::SyncUnsafeCell;
+use crate::syncunsafecell::{SyncUnsafeCell, ptr_to_ref_mut};
 use crate::{Address, PhyAddress};
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -20,7 +20,7 @@ static HOOK_EVENTS: SyncUnsafeCell<Vec<Option<HookEvent>>> =
     unsafe { SyncUnsafeCell::new(vec![None; NUM_CPUS]) };
 
 pub(crate) unsafe fn hook_event(id: u32) -> &'static mut Option<HookEvent> {
-    unsafe { &mut (&mut (*(HOOK_EVENTS.0.get())))[id as usize] }
+    unsafe { &mut ptr_to_ref_mut(HOOK_EVENTS.0.get())[id as usize] }
 }
 
 pub(crate) unsafe fn set_hook_event(id: u32, he: Option<HookEvent>) {
@@ -275,7 +275,7 @@ pub trait Hooks {
 static HOOKS: SyncUnsafeCell<Vec<&mut dyn Hooks>> = SyncUnsafeCell::new(Vec::new());
 
 unsafe fn hooks() -> &'static mut Vec<&'static mut dyn Hooks> {
-    unsafe { &mut *(HOOKS.0.get()) }
+    unsafe { ptr_to_ref_mut(HOOKS.0.get()) }
 }
 
 pub(crate) unsafe fn register<'a>(h: &'a mut dyn Hooks) {
@@ -754,9 +754,7 @@ unsafe extern "C-unwind" fn bx_instr_outp(addr: u16, len: u32, val: u32) {
 #[unsafe(no_mangle)]
 unsafe extern "C-unwind" fn bx_instr_cpuid(cpu: u32) {
     unsafe {
-        hooks()
-            .iter_mut()
-            .for_each(|x| x.cpuid(cpu));
+        hooks().iter_mut().for_each(|x| x.cpuid(cpu));
     }
 }
 
