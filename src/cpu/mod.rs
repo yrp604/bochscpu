@@ -137,6 +137,21 @@ unsafe extern "C" {
     fn cpu_get_fp_st(id: u32, reg: u32, val: *mut u64, exp: *mut u16);
     fn cpu_set_fp_st(id: u32, reg: u32, val: u64, exp: u16);
 
+    fn cpu_get_ia32_cet_control_u(id: u32) -> u64;
+    fn cpu_set_ia32_cet_control_u(id: u32, val: u64);
+    fn cpu_get_ia32_cet_control_s(id: u32) -> u64;
+    fn cpu_set_ia32_cet_control_s(id: u32, val: u64);
+    fn cpu_get_ia32_pl_ssp0(id: u32) -> u64;
+    fn cpu_set_ia32_pl_ssp0(id: u32, val: u64) -> u64;
+    fn cpu_get_ia32_pl_ssp1(id: u32) -> u64;
+    fn cpu_set_ia32_pl_ssp1(id: u32, val: u64) -> u64;
+    fn cpu_get_ia32_pl_ssp2(id: u32) -> u64;
+    fn cpu_set_ia32_pl_ssp2(id: u32, val: u64) -> u64;
+    fn cpu_get_ia32_pl_ssp3(id: u32) -> u64;
+    fn cpu_set_ia32_pl_ssp3(id: u32, val: u64) -> u64;
+    fn cpu_get_ia32_interrupt_ssp_table(id: u32) -> u64;
+    fn cpu_set_ia32_interrupt_ssp_table(id: u32, val: u64);
+
     /// Bail out of the cpu eval loop
     ///
     /// This ffi's to longjmp, meaning some variables drop routines might be
@@ -1267,6 +1282,62 @@ impl Cpu {
 
     pub unsafe fn set_tsc_aux(&self, v: u64) {
         unsafe { cpu_set_tsc_aux(self.handle, v as _) }
+    }
+
+    pub unsafe fn ia32_cet_control_u(&self) -> u64 {
+        unsafe { cpu_get_ia32_cet_control_u(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_cet_control_u(&self, v: u64) {
+        unsafe { cpu_set_ia32_cet_control_u(self.handle, v) }
+    }
+
+    pub unsafe fn ia32_cet_control_s(&self) -> u64 {
+        unsafe { cpu_get_ia32_cet_control_s(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_cet_control_s(&self, v: u64) {
+        unsafe { cpu_set_ia32_cet_control_s(self.handle, v) }
+    }
+
+    pub unsafe fn ia32_pl_ssp0(&self) -> u64 {
+        unsafe { cpu_get_ia32_pl_ssp0(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_pl_ssp0(&self, v: u64) -> u64 {
+        unsafe { cpu_set_ia32_pl_ssp0(self.handle, v) }
+    }
+
+    pub unsafe fn ia32_pl_ssp1(&self) -> u64 {
+        unsafe { cpu_get_ia32_pl_ssp1(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_pl_ssp1(&self, v: u64) -> u64 {
+        unsafe { cpu_set_ia32_pl_ssp1(self.handle, v) }
+    }
+
+    pub unsafe fn ia32_pl_ssp2(&self) -> u64 {
+        unsafe { cpu_get_ia32_pl_ssp2(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_pl_ssp2(&self, v: u64) -> u64 {
+        unsafe { cpu_set_ia32_pl_ssp2(self.handle, v) }
+    }
+
+    pub unsafe fn ia32_pl_ssp3(&self) -> u64 {
+        unsafe { cpu_get_ia32_pl_ssp3(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_pl_ssp3(&self, v: u64) -> u64 {
+        unsafe { cpu_set_ia32_pl_ssp3(self.handle, v) }
+    }
+
+    pub unsafe fn ia32_interrupt_ssp_table(&self) -> u64 {
+        unsafe { cpu_get_ia32_interrupt_ssp_table(self.handle) }
+    }
+
+    pub unsafe fn set_ia32_interrupt_ssp_table(&self, v: u64) {
+        unsafe { cpu_set_ia32_interrupt_ssp_table(self.handle, v) }
     }
 
     // TODO mtrrphys?
