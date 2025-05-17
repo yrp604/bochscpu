@@ -83,4 +83,11 @@ pub struct State {
     pub cstar: u64,
     pub sfmask: u64,
     pub tsc_aux: u64,
+    pub cet_control_u: u64,
+    pub cet_control_s: u64,
+    pub pl0_ssp: u64,
+    pub pl1_ssp: u64,
+    pub pl2_ssp: u64,
+    pub pl3_ssp: u64,
+    pub interrupt_ssp_table: u64,
 }
