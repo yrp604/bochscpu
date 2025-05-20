@@ -142,13 +142,13 @@ unsafe extern "C" {
     fn cpu_get_cet_control_s(id: u32) -> u64;
     fn cpu_set_cet_control_s(id: u32, val: u64);
     fn cpu_get_pl0_ssp(id: u32) -> u64;
-    fn cpu_set_pl0_ssp(id: u32, val: u64) -> u64;
+    fn cpu_set_pl0_ssp(id: u32, val: u64);
     fn cpu_get_pl1_ssp(id: u32) -> u64;
-    fn cpu_set_pl1_ssp(id: u32, val: u64) -> u64;
+    fn cpu_set_pl1_ssp(id: u32, val: u64);
     fn cpu_get_pl2_ssp(id: u32) -> u64;
-    fn cpu_set_pl2_ssp(id: u32, val: u64) -> u64;
+    fn cpu_set_pl2_ssp(id: u32, val: u64);
     fn cpu_get_pl3_ssp(id: u32) -> u64;
-    fn cpu_set_pl3_ssp(id: u32, val: u64) -> u64;
+    fn cpu_set_pl3_ssp(id: u32, val: u64);
     fn cpu_get_interrupt_ssp_table(id: u32) -> u64;
     fn cpu_set_interrupt_ssp_table(id: u32, val: u64);
 
