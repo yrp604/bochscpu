@@ -25,6 +25,9 @@ unsafe extern "C" {
     fn cpu_set_pc(id: u32, val: u64);
     fn cpu_set_sp(id: u32, val: u64);
 
+    fn cpu_get_ssp(id: u32) -> u64;
+    fn cpu_set_ssp(id: u32, val: u64);
+
     fn cpu_get_reg64(id: u32, reg: u32) -> u64;
     fn cpu_set_reg64(id: u32, reg: u32, val: u64);
 
@@ -479,6 +482,7 @@ impl Cpu {
                 r14: self.r14(),
                 r15: self.r15(),
                 rflags: self.rflags(),
+                ssp: self.ssp(),
 
                 es: self.es(),
                 cs: self.cs(),
@@ -606,6 +610,7 @@ impl Cpu {
             self.set_r14(s.r14);
             self.set_r15(s.r15);
             self.set_rflags(s.rflags);
+            self.set_ssp(s.ssp);
 
             self.set_es(s.es);
             let deferred_flush = self.set_cs_deferred(s.cs);
@@ -745,6 +750,14 @@ impl Cpu {
 
     pub unsafe fn set_rsp(&self, v: u64) {
         unsafe { cpu_set_sp(self.handle, v) }
+    }
+
+    pub unsafe fn ssp(&self) -> u64 {
+        unsafe { cpu_get_ssp(self.handle) }
+    }
+
+    pub unsafe fn set_ssp(&self, v: u64) {
+        unsafe { cpu_set_ssp(self.handle, v) }
     }
 
     pub unsafe fn rbp(&self) -> u64 {
@@ -1320,7 +1333,7 @@ impl Cpu {
         unsafe { cpu_get_pl0_ssp(self.handle) }
     }
 
-    pub unsafe fn set_pl0_ssp(&self, v: u64) -> u64 {
+    pub unsafe fn set_pl0_ssp(&self, v: u64) {
         unsafe { cpu_set_pl0_ssp(self.handle, v) }
     }
 
@@ -1328,7 +1341,7 @@ impl Cpu {
         unsafe { cpu_get_pl1_ssp(self.handle) }
     }
 
-    pub unsafe fn set_pl1_ssp(&self, v: u64) -> u64 {
+    pub unsafe fn set_pl1_ssp(&self, v: u64) {
         unsafe { cpu_set_pl1_ssp(self.handle, v) }
     }
 
@@ -1336,7 +1349,7 @@ impl Cpu {
         unsafe { cpu_get_pl2_ssp(self.handle) }
     }
 
-    pub unsafe fn set_pl2_ssp(&self, v: u64) -> u64 {
+    pub unsafe fn set_pl2_ssp(&self, v: u64) {
         unsafe { cpu_set_pl2_ssp(self.handle, v) }
     }
 
@@ -1344,7 +1357,7 @@ impl Cpu {
         unsafe { cpu_get_pl3_ssp(self.handle) }
     }
 
-    pub unsafe fn set_pl3_ssp(&self, v: u64) -> u64 {
+    pub unsafe fn set_pl3_ssp(&self, v: u64) {
         unsafe { cpu_set_pl3_ssp(self.handle, v) }
     }
 

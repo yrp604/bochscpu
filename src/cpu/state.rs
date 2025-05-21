@@ -27,6 +27,7 @@ pub struct State {
     pub r15: u64,
     pub rip: u64,
     pub rflags: u64,
+    pub ssp: u64,
 
     pub es: Seg,
     pub cs: Seg,

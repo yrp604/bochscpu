@@ -81,6 +81,14 @@ BOCHSAPI void cpu_set_sp(unsigned id, Bit64u val) {
     BX_CPU(id)->prev_rsp = val;
 }
 
+BOCHSAPI Bit64u cpu_get_ssp(unsigned id) {
+    return BX_CPU(id)->get_ssp();
+}
+
+BOCHSAPI void cpu_set_ssp(unsigned id, Bit64u val) {
+    BX_CPU(id)->gen_reg[BX_64BIT_REG_SSP].rrx = val;
+}
+
 BOCHSAPI Bit64u cpu_get_reg64(unsigned id, unsigned reg) {
     return BX_CPU(id)->get_reg64(reg);
 }
