@@ -118,6 +118,8 @@ fn init_params_bool() -> SyncUnsafeCell<BTreeMap<&'static str, ParamBool>> {
     m.insert("cpuid.pcid", ParamBool::new(c"pcid", true));
     m.insert("cpuid.smep", ParamBool::new(c"smep", true));
     m.insert("cpuid.smap", ParamBool::new(c"smap", true));
+    m.insert("cpuid.cet", ParamBool::new(c"cet", true));
+
 
     m.insert("cpuid.mwait", ParamBool::new(c"mwait", false));
     m.insert("cpuid.movbe", ParamBool::new(c"movbe", false));
