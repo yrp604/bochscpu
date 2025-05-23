@@ -24,9 +24,11 @@ fn init_params_enum() -> SyncUnsafeCell<BTreeMap<&'static str, ParamEnum>> {
             c"model",
             &[
                 c"bx_generic",
+                c"i486dx4",
                 c"pentium",
                 c"pentium_mxx",
                 c"amd_k6_2_chomper",
+                c"athlon_xp",
                 c"p2_klamath",
                 c"p3_katmai",
                 c"p4_willamette",
@@ -51,8 +53,10 @@ fn init_params_enum() -> SyncUnsafeCell<BTreeMap<&'static str, ParamEnum>> {
                 c"corei3_cnl",
                 c"corei7_icelake_u",
                 c"tigerlake",
+                c"sapphire_rapids",
+                c"arrow_lake",
             ],
-            27, // default to tigerlake
+            29, // default to tigerlake
         ),
     );
 
