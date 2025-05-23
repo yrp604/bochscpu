@@ -25,6 +25,9 @@ unsafe extern "C" {
     fn cpu_set_pc(id: u32, val: u64);
     fn cpu_set_sp(id: u32, val: u64);
 
+    fn cpu_get_ssp(id: u32) -> u64;
+    fn cpu_set_ssp(id: u32, val: u64);
+
     fn cpu_get_reg64(id: u32, reg: u32) -> u64;
     fn cpu_set_reg64(id: u32, reg: u32, val: u64);
 
@@ -136,6 +139,21 @@ unsafe extern "C" {
     fn cpu_set_fp_op(id: u32, val: u16);
     fn cpu_get_fp_st(id: u32, reg: u32, val: *mut u64, exp: *mut u16);
     fn cpu_set_fp_st(id: u32, reg: u32, val: u64, exp: u16);
+
+    fn cpu_get_cet_control_u(id: u32) -> u64;
+    fn cpu_set_cet_control_u(id: u32, val: u64);
+    fn cpu_get_cet_control_s(id: u32) -> u64;
+    fn cpu_set_cet_control_s(id: u32, val: u64);
+    fn cpu_get_pl0_ssp(id: u32) -> u64;
+    fn cpu_set_pl0_ssp(id: u32, val: u64);
+    fn cpu_get_pl1_ssp(id: u32) -> u64;
+    fn cpu_set_pl1_ssp(id: u32, val: u64);
+    fn cpu_get_pl2_ssp(id: u32) -> u64;
+    fn cpu_set_pl2_ssp(id: u32, val: u64);
+    fn cpu_get_pl3_ssp(id: u32) -> u64;
+    fn cpu_set_pl3_ssp(id: u32, val: u64);
+    fn cpu_get_interrupt_ssp_table(id: u32) -> u64;
+    fn cpu_set_interrupt_ssp_table(id: u32, val: u64);
 
     /// Bail out of the cpu eval loop
     ///
@@ -464,6 +482,7 @@ impl Cpu {
                 r14: self.r14(),
                 r15: self.r15(),
                 rflags: self.rflags(),
+                ssp: self.ssp(),
 
                 es: self.es(),
                 cs: self.cs(),
@@ -556,6 +575,14 @@ impl Cpu {
                     self.fp_st(6),
                     self.fp_st(7),
                 ],
+
+                cet_control_u: self.cet_control_u(),
+                cet_control_s: self.cet_control_s(),
+                pl0_ssp: self.pl0_ssp(),
+                pl1_ssp: self.pl1_ssp(),
+                pl2_ssp: self.pl2_ssp(),
+                pl3_ssp: self.pl3_ssp(),
+                interrupt_ssp_table: self.interrupt_ssp_table(),
             }
         }
     }
@@ -583,6 +610,7 @@ impl Cpu {
             self.set_r14(s.r14);
             self.set_r15(s.r15);
             self.set_rflags(s.rflags);
+            self.set_ssp(s.ssp);
 
             self.set_es(s.es);
             let deferred_flush = self.set_cs_deferred(s.cs);
@@ -623,6 +651,14 @@ impl Cpu {
             self.set_apic_base(s.apic_base);
             self.set_pat(s.pat);
             self.set_tsc_aux(s.tsc_aux);
+
+            self.set_cet_control_u(s.cet_control_u);
+            self.set_cet_control_s(s.cet_control_s);
+            self.set_pl0_ssp(s.pl0_ssp);
+            self.set_pl1_ssp(s.pl1_ssp);
+            self.set_pl2_ssp(s.pl2_ssp);
+            self.set_pl3_ssp(s.pl3_ssp);
+            self.set_interrupt_ssp_table(s.interrupt_ssp_table);
 
             for (ii, z) in (s.zmm).iter().enumerate() {
                 self.set_zmm(ii, *z);
@@ -714,6 +750,14 @@ impl Cpu {
 
     pub unsafe fn set_rsp(&self, v: u64) {
         unsafe { cpu_set_sp(self.handle, v) }
+    }
+
+    pub unsafe fn ssp(&self) -> u64 {
+        unsafe { cpu_get_ssp(self.handle) }
+    }
+
+    pub unsafe fn set_ssp(&self, v: u64) {
+        unsafe { cpu_set_ssp(self.handle, v) }
     }
 
     pub unsafe fn rbp(&self) -> u64 {
@@ -1267,6 +1311,62 @@ impl Cpu {
 
     pub unsafe fn set_tsc_aux(&self, v: u64) {
         unsafe { cpu_set_tsc_aux(self.handle, v as _) }
+    }
+
+    pub unsafe fn cet_control_u(&self) -> u64 {
+        unsafe { cpu_get_cet_control_u(self.handle) }
+    }
+
+    pub unsafe fn set_cet_control_u(&self, v: u64) {
+        unsafe { cpu_set_cet_control_u(self.handle, v) }
+    }
+
+    pub unsafe fn cet_control_s(&self) -> u64 {
+        unsafe { cpu_get_cet_control_s(self.handle) }
+    }
+
+    pub unsafe fn set_cet_control_s(&self, v: u64) {
+        unsafe { cpu_set_cet_control_s(self.handle, v) }
+    }
+
+    pub unsafe fn pl0_ssp(&self) -> u64 {
+        unsafe { cpu_get_pl0_ssp(self.handle) }
+    }
+
+    pub unsafe fn set_pl0_ssp(&self, v: u64) {
+        unsafe { cpu_set_pl0_ssp(self.handle, v) }
+    }
+
+    pub unsafe fn pl1_ssp(&self) -> u64 {
+        unsafe { cpu_get_pl1_ssp(self.handle) }
+    }
+
+    pub unsafe fn set_pl1_ssp(&self, v: u64) {
+        unsafe { cpu_set_pl1_ssp(self.handle, v) }
+    }
+
+    pub unsafe fn pl2_ssp(&self) -> u64 {
+        unsafe { cpu_get_pl2_ssp(self.handle) }
+    }
+
+    pub unsafe fn set_pl2_ssp(&self, v: u64) {
+        unsafe { cpu_set_pl2_ssp(self.handle, v) }
+    }
+
+    pub unsafe fn pl3_ssp(&self) -> u64 {
+        unsafe { cpu_get_pl3_ssp(self.handle) }
+    }
+
+    pub unsafe fn set_pl3_ssp(&self, v: u64) {
+        unsafe { cpu_set_pl3_ssp(self.handle, v) }
+    }
+
+    pub unsafe fn interrupt_ssp_table(&self) -> u64 {
+        unsafe { cpu_get_interrupt_ssp_table(self.handle) }
+    }
+
+    pub unsafe fn set_interrupt_ssp_table(&self, v: u64) {
+        unsafe { cpu_set_interrupt_ssp_table(self.handle, v) }
     }
 
     // TODO mtrrphys?
