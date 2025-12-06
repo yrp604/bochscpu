@@ -1,0 +1,64 @@
+name: Build
+
+on:
+  push:
+    branches: ['master']
+  pull_request:
+    branches: ['master']
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-2025
+          # - windows-11-arm  #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+        build: [debug, release]
+
+    name: ${{ matrix.os }}/${{ matrix.build }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - run: |
+          rustup self update
+          rustup upgrade
+          rustup component add rustfmt
+          rustup show
+
+      - if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential pkg-config libssl-dev cmake g++
+
+      - if: matrix.build == 'debug'
+        run: |
+          cargo build
+
+      - if: matrix.build == 'release'
+        run: |
+          cargo build --release
+          git clone https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
+          cd ../bochscpu-bench ; cargo run --release ; cd ../bochscpu
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: bochscpu_${{ matrix.build }}_${{ matrix.os }}_${{ github.sha }}
+          if-no-files-found: warn
+          path: |
+            ./target/**/*.rlib
+            ./target/**/*.exe
+            ./target/**/*.pdb
+            ./target/**/*.dll
+
+
+
+
+
+

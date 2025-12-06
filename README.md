@@ -2,8 +2,10 @@
 
 ## install
 
-Download the prebuilt artifacts from [bochscpu-build](https://github.com/yrp604/bochscpu-build).
-Install the `lib` and `bochs` folders into the `bochscpu` checkout. For example:
+Run `cargo build` - it will download the prebuilt artifacts from [bochscpu-build](https://github.com/yrp604/bochscpu-build) and extract the `lib` and `bochs` folders into the `bochscpu` checkout. 
+
+This will result in a tree like follow:
+
 ```
 bochscpu$ ls -l
 total 20
@@ -22,7 +24,7 @@ drwxrwxrwx 1 x x 4096 Jan  3 00:16 target
 ## usage
 
 bochscpu exposes all the instrumentation points that bochs does. These are
-documented [here](http://bochs.sourceforge.net/cgi-bin/lxr/source/instrument/instrumentation.txt).
+documented [here](https://github.com/bochs-emu/Bochs/blob/master/bochs/instrument/instrumentation.txt).
 
 For an example of initalizing and using the emulator, see the source code for
 the [benchmark example](https://github.com/yrp604/bochscpu-bench/blob/master/src/fib.rs).
