@@ -49,6 +49,14 @@ BOCHSAPI void cpu_bail(unsigned id) {
     longjmp(c->jmp_buf_env, 1);
 }
 
+BOCHSAPI void cpu_clear_icache(unsigned id) {
+    BX_CPU_C *c = BX_CPU(id);
+
+    // icache.cc:flushICaches
+    c->iCache.flushICacheEntries();
+    c->async_event |= BX_ASYNC_EVENT_STOP_TRACE;
+}
+
 BOCHSAPI void cpu_set_mode(unsigned id) {
     BX_CPU_C *c = BX_CPU(id);
 

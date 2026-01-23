@@ -19,6 +19,8 @@ unsafe extern "C" {
 
     fn cpu_loop(id: u32);
 
+    fn cpu_clear_icache(id: u32);
+
     fn cpu_set_mode(id: u32);
 
     fn cpu_get_pc(id: u32) -> u64;
@@ -386,7 +388,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn prepare(&self) -> CpuRun {
+    pub unsafe fn prepare(&self) -> CpuRun<'_> {
         CpuRun::new(self)
     }
 
@@ -1193,6 +1195,12 @@ impl Cpu {
                 cpu_set_efer(self.handle, v);
                 self.set_mode();
             }
+        }
+    }
+
+    pub unsafe fn clear_icache(&self) {
+        unsafe {
+            cpu_clear_icache(self.handle);
         }
     }
 
