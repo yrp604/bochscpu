@@ -71,6 +71,10 @@ BOCHSAPI bx_address cpu_get_pc(unsigned id) {
     return BX_CPU(id)->get_instruction_pointer();
 }
 
+BOCHSAPI bx_address cpu_get_prev_pc(unsigned id) {
+    return BX_CPU(id)->prev_rip;
+}
+
 BOCHSAPI void cpu_set_pc(unsigned id, Bit64u val) {
     BX_CPU(id)->gen_reg[BX_64BIT_REG_RIP].rrx = val;
     BX_CPU(id)->prev_rip = val;

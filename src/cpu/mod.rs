@@ -22,6 +22,7 @@ unsafe extern "C" {
     fn cpu_set_mode(id: u32);
 
     fn cpu_get_pc(id: u32) -> u64;
+    fn cpu_get_prev_pc(id: u32) -> u64;
     fn cpu_set_pc(id: u32, val: u64);
     fn cpu_set_sp(id: u32, val: u64);
 
@@ -386,7 +387,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn prepare(&self) -> CpuRun {
+    pub unsafe fn prepare(&self) -> CpuRun<'_> {
         CpuRun::new(self)
     }
 
@@ -702,6 +703,10 @@ impl Cpu {
 
     pub unsafe fn rip(&self) -> u64 {
         unsafe { cpu_get_pc(self.handle) }
+    }
+
+    pub unsafe fn prev_rip(&self) -> u64 {
+        unsafe { cpu_get_prev_pc(self.handle) }
     }
 
     pub unsafe fn set_rip(&self, v: u64) {
