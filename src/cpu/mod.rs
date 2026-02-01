@@ -155,6 +155,8 @@ unsafe extern "C" {
     fn cpu_get_interrupt_ssp_table(id: u32) -> u64;
     fn cpu_set_interrupt_ssp_table(id: u32, val: u64);
 
+    fn cpu_get_cpu_mode(id: u32) -> u32;
+
     /// Bail out of the cpu eval loop
     ///
     /// This ffi's to longjmp, meaning some variables drop routines might be
@@ -236,6 +238,15 @@ pub struct Seg {
     pub base: Address,
     pub limit: u32,
     pub attr: u16,
+}
+
+// `cpu/cpu.h`/`BxCpuMode`
+pub enum CpuMode {
+    Ia32Real,       // CR0.PE=0
+    Ia32V8086,      // CR0.PE=1, EFLAGS.VM=1 EFER.LMA=0
+    Ia32Protected,  // CR0.PE=1, EFLAGS.VM=0
+    Ia32LongCompat, // EFER.LMA = 1, CR0.PE=1, CS.L=0
+    Ia32Long64,     // EFER.LMA = 1, CR0.PE=1, CS.L=1
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -386,7 +397,7 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn prepare(&self) -> CpuRun {
+    pub unsafe fn prepare(&self) -> CpuRun<'_> {
         CpuRun::new(self)
     }
 
@@ -1455,5 +1466,35 @@ impl Cpu {
             assert!(idx < 8);
             cpu_set_fp_st(self.handle, idx as _, v.fraction, v.exp);
         }
+    }
+
+    pub unsafe fn cpu_mode(&self) -> CpuMode {
+        match unsafe { cpu_get_cpu_mode(self.handle) } {
+            0 => CpuMode::Ia32Real,
+            1 => CpuMode::Ia32V8086,
+            2 => CpuMode::Ia32Protected,
+            3 => CpuMode::Ia32LongCompat,
+            4 => CpuMode::Ia32Long64,
+            v => panic!("unknown value {v} in cpu_mode"),
+        }
+    }
+
+    pub fn v8086_mode(&self) -> bool {
+        matches!(unsafe { self.cpu_mode() }, CpuMode::Ia32V8086)
+    }
+
+    pub fn real_mode(&self) -> bool {
+        matches!(unsafe { self.cpu_mode() }, CpuMode::Ia32Real)
+    }
+
+    pub fn protected_mode(&self) -> bool {
+        matches!(
+            unsafe { self.cpu_mode() },
+            CpuMode::Ia32Protected | CpuMode::Ia32LongCompat | CpuMode::Ia32Long64
+        )
+    }
+
+    pub fn long64_mode(&self) -> bool {
+        matches!(unsafe { self.cpu_mode() }, CpuMode::Ia32Long64)
     }
 }

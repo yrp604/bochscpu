@@ -17,6 +17,7 @@ unsafe extern "C-unwind" {
     fn sim_delete_param_string(n: *mut c_void);
 }
 
+#[expect(dead_code)]
 pub struct ParamEnum(pub *mut c_void, Vec<*const c_char>);
 impl ParamEnum {
     pub fn new(name: &'static CStr, val: &[&'static CStr], idx: usize) -> Self {
