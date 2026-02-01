@@ -569,6 +569,10 @@ BOCHSAPI void cpu_set_fp_st(unsigned id, unsigned reg, const Bit64u fraction, co
     BX_CPU(id)->the_i387.st_space[reg] = f;
 }
 
+BOCHSAPI Bit32u cpu_get_cpu_mode(unsigned id) {
+    return BX_CPU(id)->get_cpu_mode();
+}
+
 BOCHSAPI Bit32u cpu_get_mxcsr(unsigned id) {
     return BX_CPU(id)->mxcsr.mxcsr;
 }
