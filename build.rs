@@ -265,6 +265,9 @@ fn main() {
         .compile("opcode");
     println!("cargo:rustc-link-lib=static=opcode");
 
+    // rebuild if any file in cabi changes
+    println!("cargo:rerun-if-changed=cabi");
+
     // Absolute dir for linker search
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     println!("cargo:rustc-link-search={}/lib", manifest_dir);
