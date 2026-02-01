@@ -241,12 +241,12 @@ pub struct Seg {
 }
 
 // `cpu/cpu.h`/`BxCpuMode`
-pub enum CpuMode {
-    Ia32Real,       // CR0.PE=0
-    Ia32V8086,      // CR0.PE=1, EFLAGS.VM=1 EFER.LMA=0
-    Ia32Protected,  // CR0.PE=1, EFLAGS.VM=0
-    Ia32LongCompat, // EFER.LMA = 1, CR0.PE=1, CS.L=0
-    Ia32Long64,     // EFER.LMA = 1, CR0.PE=1, CS.L=1
+pub enum Mode {
+    Ia32Real = 0,       // CR0.PE=0
+    Ia32V8086 = 1,      // CR0.PE=1, EFLAGS.VM=1 EFER.LMA=0
+    Ia32Protected = 2,  // CR0.PE=1, EFLAGS.VM=0
+    Ia32LongCompat = 3, // EFER.LMA = 1, CR0.PE=1, CS.L=0
+    Ia32Long64 = 4,     // EFER.LMA = 1, CR0.PE=1, CS.L=1
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
@@ -1468,33 +1468,33 @@ impl Cpu {
         }
     }
 
-    pub unsafe fn cpu_mode(&self) -> CpuMode {
+    pub unsafe fn cpu_mode(&self) -> Mode {
         match unsafe { cpu_get_cpu_mode(self.handle) } {
-            0 => CpuMode::Ia32Real,
-            1 => CpuMode::Ia32V8086,
-            2 => CpuMode::Ia32Protected,
-            3 => CpuMode::Ia32LongCompat,
-            4 => CpuMode::Ia32Long64,
+            0 => Mode::Ia32Real,
+            1 => Mode::Ia32V8086,
+            2 => Mode::Ia32Protected,
+            3 => Mode::Ia32LongCompat,
+            4 => Mode::Ia32Long64,
             v => panic!("unknown value {v} in cpu_mode"),
         }
     }
 
     pub fn v8086_mode(&self) -> bool {
-        matches!(unsafe { self.cpu_mode() }, CpuMode::Ia32V8086)
+        matches!(unsafe { self.cpu_mode() }, Mode::Ia32V8086)
     }
 
     pub fn real_mode(&self) -> bool {
-        matches!(unsafe { self.cpu_mode() }, CpuMode::Ia32Real)
+        matches!(unsafe { self.cpu_mode() }, Mode::Ia32Real)
     }
 
     pub fn protected_mode(&self) -> bool {
         matches!(
             unsafe { self.cpu_mode() },
-            CpuMode::Ia32Protected | CpuMode::Ia32LongCompat | CpuMode::Ia32Long64
+            Mode::Ia32Protected | Mode::Ia32LongCompat | Mode::Ia32Long64
         )
     }
 
     pub fn long64_mode(&self) -> bool {
-        matches!(unsafe { self.cpu_mode() }, CpuMode::Ia32Long64)
+        matches!(unsafe { self.cpu_mode() }, Mode::Ia32Long64)
     }
 }
