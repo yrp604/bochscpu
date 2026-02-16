@@ -95,3 +95,6 @@ dkms.conf
 *.exe
 *.out
 *.app
+
+lib/
+bochs/
