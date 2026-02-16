@@ -43,7 +43,10 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
         .filter(|x| x["name"] == filename)
         .next()
         .unwrap();
-    (asset["name"].to_string(), asset["url"].to_string())
+    (
+        asset["name"].to_string(),
+        asset["browser_download_url"].to_string(),
+    )
 }
 
 fn download_bochscpu_build(url: &str) {
