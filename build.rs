@@ -1,22 +1,53 @@
+//! Download and setup bochscpu build in order to compile bochscpu
+//!
+//! By default, the latest build version will be attempted to be downloaded. A specific version can be
+//! provided through the environment variable `BOCHSCPU_BUILD_VERSION` (e.g. `export BOCHSCPU_BUILD_VERSION=0.5`)
+
+use json;
 use std::env;
 
-// Links are from https://github.com/yrp604/bochscpu-build/releases/tag/v0.5
+fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
+    let version = version.unwrap_or("latest");
+    let cli = reqwest::blocking::ClientBuilder::new()
+        .user_agent("Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/15")
+        .build()
+        .unwrap();
+    let res = cli
+        .get(format!(
+            "https://api.github.com/repos/yrp604/bochscpu-build/releases/{}",
+            version
+        ))
+        .send()
+        .unwrap();
+    let text = res.text().unwrap();
+    dbg!(&text);
+    let js = json::parse(text.as_str()).unwrap();
 
-#[cfg(all(target_arch = "x86_64", target_os = "windows", debug_assertions))]
-const BOCHSCPU_BUILD_URL: &str = "https://github.com/yrp604/bochscpu-build/releases/download/v0.5/bochscpu-build-windows-latest-x64-MD.zip";
-#[cfg(all(target_arch = "x86_64", target_os = "windows", not(debug_assertions)))]
-const BOCHSCPU_BUILD_URL: &str = "https://github.com/yrp604/bochscpu-build/releases/download/v0.5/bochscpu-build-windows-latest-x64-MD.zip";
-#[cfg(all(target_arch = "aarch64", target_os = "windows", debug_assertions))]
-const BOCHSCPU_BUILD_URL: &str = "https://github.com/yrp604/bochscpu-build/releases/download/v0.5/bochscpu-build-windows-11-arm-arm64-MD.zip";
-#[cfg(all(target_arch = "aarch64", target_os = "windows", not(debug_assertions)))]
-const BOCHSCPU_BUILD_URL: &str = "https://github.com/yrp604/bochscpu-build/releases/download/v0.5/bochscpu-build-windows-11-arm-arm64-MT.zip";
-#[cfg(all(target_arch = "x86_64", target_os = "linux"))]
-const BOCHSCPU_BUILD_URL: &str = "https://github.com/yrp604/bochscpu-build/releases/download/v0.5/bochscpu-build-ubuntu-latest-x64.zip";
-#[cfg(all(target_arch = "aarch64", target_os = "linux"))]
-const BOCHSCPU_BUILD_URL: &str = "https://github.com/yrp604/bochscpu-build/releases/download/v0.5/bochscpu-build-ubuntu-24.04-arm-arm64.zip";
+    // Expected filename format for releases (for v0.5+)
 
-fn download_bochscpu_build() {
-    let mut response = reqwest::blocking::get(BOCHSCPU_BUILD_URL).unwrap();
+    #[cfg(all(target_arch = "x86_64", target_os = "windows", debug_assertions))]
+    let filename: &str = "bochscpu-build-windows-latest-x64-MD.zip";
+    #[cfg(all(target_arch = "x86_64", target_os = "windows", not(debug_assertions)))]
+    let filename: &str = "bochscpu-build-windows-latest-x64-MD.zip";
+    #[cfg(all(target_arch = "aarch64", target_os = "windows", debug_assertions))]
+    let filename: &str = "bochscpu-build-windows-11-arm-arm64-MD.zip";
+    #[cfg(all(target_arch = "aarch64", target_os = "windows", not(debug_assertions)))]
+    let filename: &str = "bochscpu-build-windows-11-arm-arm64-MT.zip";
+    #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+    let filename: &str = "bochscpu-build-ubuntu-latest-x64.zip";
+    #[cfg(all(target_arch = "aarch64", target_os = "linux"))]
+    let filename: &str = "bochscpu-build-ubuntu-24.04-arm-arm64.zip";
+
+    let asset = js["assets"]
+        .members()
+        .filter(|x| x["name"] == filename)
+        .next()
+        .unwrap();
+    (asset["name"].to_string(), asset["url"].to_string())
+}
+
+fn download_bochscpu_build(url: &str) {
+    let mut response = reqwest::blocking::get(url).unwrap();
     let config = if cfg!(debug_assertions) {
         "Debug"
     } else {
@@ -48,8 +79,11 @@ fn download_bochscpu_build() {
 }
 
 fn main() {
+    let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
+    let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
+
     if !std::fs::exists("./lib").unwrap() {
-        download_bochscpu_build();
+        download_bochscpu_build(url.as_str());
     }
 
     // TODO figure out why the CFLAGS arent being inherited...
