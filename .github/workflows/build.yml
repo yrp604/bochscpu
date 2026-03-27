@@ -23,6 +23,8 @@ jobs:
 
     name: ${{ matrix.os }}/${{ matrix.build }}
     runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
 
