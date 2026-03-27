@@ -90,10 +90,9 @@ fn download_bochscpu_build(url: &str) {
 }
 
 fn main() {
-    let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
-    let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
-
     if !std::fs::exists("./lib").unwrap() {
+        let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
+        let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
         download_bochscpu_build(url.as_str());
     }
 
