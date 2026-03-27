@@ -26,8 +26,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - run: |
+      - if: ${{ !startsWith(matrix.os, 'macos') }}
+        run: |
+          # skip `rustup self update` on macos as rustup seems to be installed through brew
           rustup self update
+
+      - run: |
           rustup upgrade
           rustup component add rustfmt
           rustup show
