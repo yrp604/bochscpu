@@ -18,6 +18,7 @@ jobs:
           # - windows-11-arm  #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
           - ubuntu-24.04
           - ubuntu-24.04-arm
+          - macos-latest
         build: [debug, release]
 
     name: ${{ matrix.os }}/${{ matrix.build }}
