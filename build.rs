@@ -12,11 +12,17 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
         .user_agent("Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/15")
         .build()
         .unwrap();
-    let res = cli
+    let req = cli
         .get(format!(
             "https://api.github.com/repos/yrp604/bochscpu-build/releases/{}",
             version
-        ))
+        ));
+    let auth_req = match env::var("GH_TOKEN") {
+        Ok(token) => req.bearer_auth(token),
+        Err(_) => req,
+    };
+
+    let res = auth_req
         .send()
         .unwrap();
     let text = res.text().unwrap();
@@ -84,10 +90,9 @@ fn download_bochscpu_build(url: &str) {
 }
 
 fn main() {
-    let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
-    let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
-
     if !std::fs::exists("./lib").unwrap() {
+        let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
+        let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
         download_bochscpu_build(url.as_str());
     }
 
