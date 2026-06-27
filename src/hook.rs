@@ -49,33 +49,39 @@ impl From<u32> for ResetSource {
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 #[repr(u32)]
 pub enum Branch {
-    Jmp = 10,
-    JmpIndirect = 11,
-    Call = 12,
-    CallIndirect = 13,
-    Ret = 14,
-    Iret = 15,
-    Int = 16,
-    Syscall = 17,
-    Sysret = 18,
-    Sysenter = 19,
-    Sysexit = 20,
+    JmpConditionalNotTaken = 10,
+    JmpConditialTaken = 11,
+    Jmp = 12,
+    JmpIndirect = 13,
+    Call = 14,
+    CallIndirect = 15,
+    Ret = 16,
+    Iret = 17,
+    Int = 18,
+    Syscall = 19,
+    Sysret = 20,
+    Sysenter = 21,
+    Sysexit = 22,
+    Uiret = 23,
 }
 
 impl From<u32> for Branch {
     fn from(i: u32) -> Self {
         match i {
-            10 => Branch::Jmp,
-            11 => Branch::JmpIndirect,
-            12 => Branch::Call,
-            13 => Branch::CallIndirect,
-            14 => Branch::Ret,
-            15 => Branch::Iret,
-            16 => Branch::Int,
-            17 => Branch::Syscall,
-            18 => Branch::Sysret,
-            19 => Branch::Sysenter,
-            20 => Branch::Sysexit,
+            10 => Branch::JmpConditionalNotTaken,
+            11 => Branch::JmpConditionalTaken,
+            12 => Branch::Jmp,
+            13 => Branch::JmpIndirect,
+            14 => Branch::Call,
+            15 => Branch::CallIndirect,
+            16 => Branch::Ret,
+            17 => Branch::Iret,
+            18 => Branch::Int,
+            19 => Branch::Syscall,
+            20 => Branch::Sysret,
+            21 => Branch::Sysenter,
+            22 => Branch::Sysexit,
+            23 => Branch::Uiret,
             _ => unsafe { unreachable_unchecked() },
         }
     }
@@ -207,9 +213,8 @@ pub trait Hooks {
     fn hlt(&mut self, _id: u32) {}
     fn mwait(&mut self, _id: u32, _addr: PhyAddress, _len: usize, _flags: u32) {}
 
-    fn cnear_branch_taken(&mut self, _id: u32, _branch_pc: Address, _new_pc: Address) {}
-    fn cnear_branch_not_taken(&mut self, _id: u32, _pc: Address, _new_pc: Address) {}
-    fn ucnear_branch(&mut self, _id: u32, _what: Branch, _branch_pc: Address, _new_pc: Address) {}
+    fn branch_taken(&mut self, _id: u32, _what: Branch, _branch_pc: Address, _new_pc: Address) {}
+    fn branch_not_taken(&mut self, _id: u32, _what: Branch, _pc: Address, _new_pc: Address) {}
     fn far_branch(
         &mut self,
         _id: u32,
@@ -365,51 +370,7 @@ unsafe extern "C-unwind" fn bx_instr_mwait(cpu: u32, addr: PhyAddress, len: u32,
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C-unwind" fn bx_instr_cnear_branch_taken(
-    cpu: u32,
-    branch_eip: Address,
-    new_eip: Address,
-) {
-    unsafe {
-        hooks()
-            .iter_mut()
-            .for_each(|x| x.cnear_branch_taken(cpu, branch_eip, new_eip));
-
-        if let Some(e) = hook_event(cpu).take() {
-            match e {
-                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-                HookEvent::Exception(vector, error) => {
-                    cpu_exception(cpu, vector, error.unwrap_or(0))
-                }
-            }
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-unsafe extern "C-unwind" fn bx_instr_cnear_branch_not_taken(
-    cpu: u32,
-    branch_eip: Address,
-    new_eip: Address,
-) {
-    unsafe {
-        hooks()
-            .iter_mut()
-            .for_each(|x| x.cnear_branch_not_taken(cpu, branch_eip, new_eip));
-
-        if let Some(e) = hook_event(cpu).take() {
-            match e {
-                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
-                HookEvent::Exception(vector, error) => {
-                    cpu_exception(cpu, vector, error.unwrap_or(0))
-                }
-            }
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-unsafe extern "C-unwind" fn bx_instr_ucnear_branch(
+unsafe extern "C-unwind" fn bx_instr_branch_taken(
     cpu: u32,
     what: u32,
     branch_eip: Address,
@@ -418,7 +379,30 @@ unsafe extern "C-unwind" fn bx_instr_ucnear_branch(
     unsafe {
         hooks()
             .iter_mut()
-            .for_each(|x| x.ucnear_branch(cpu, what.into(), branch_eip, new_eip));
+            .for_each(|x| x.branch_taken(cpu, what.into(), branch_eip, new_eip));
+
+        if let Some(e) = hook_event(cpu).take() {
+            match e {
+                HookEvent::Stop | HookEvent::SetPc => cpu_bail(cpu),
+                HookEvent::Exception(vector, error) => {
+                    cpu_exception(cpu, vector, error.unwrap_or(0))
+                }
+            }
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C-unwind" fn bx_instr_branch_not_taken(
+    cpu: u32,
+    what: u32,
+    branch_eip: Address,
+    new_eip: Address,
+) {
+    unsafe {
+        hooks()
+            .iter_mut()
+            .for_each(|x| x.branch_not_taken(cpu, what.into(), branch_eip, new_eip));
 
         if let Some(e) = hook_event(cpu).take() {
             match e {
