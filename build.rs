@@ -31,13 +31,13 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
 
     // Expected filename format for releases (for v0.5+)
 
-    #[cfg(all(target_arch = "x86_64", target_os = "windows", crt-static))]
+    #[cfg(all(target_arch = "x86_64", target_os = "windows"))]
     let filename: &str = "bochscpu-build-windows-latest-x64-MD.zip";
-    #[cfg(all(target_arch = "x86_64", target_os = "windows", not(crt-static)))]
+    #[cfg(all(target_arch = "x86_64", target_os = "windows", target_feature = "crt-static"))]
     let filename: &str = "bochscpu-build-windows-latest-x64-MT.zip";
-    #[cfg(all(target_arch = "aarch64", target_os = "windows", crt-static))]
+    #[cfg(all(target_arch = "aarch64", target_os = "windows"))]
     let filename: &str = "bochscpu-build-windows-11-arm-arm64-MD.zip";
-    #[cfg(all(target_arch = "aarch64", target_os = "windows", not(crt-static)))]
+    #[cfg(all(target_arch = "aarch64", target_os = "windows", target_feature = "crt-static"))]
     let filename: &str = "bochscpu-build-windows-11-arm-arm64-MT.zip";
     #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
     let filename: &str = "bochscpu-build-ubuntu-latest-x64.zip";
