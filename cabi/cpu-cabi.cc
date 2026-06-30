@@ -280,12 +280,12 @@ BOCHSAPI void cpu_set_cr3(unsigned id, bx_address v) {
     BX_CPU(id)->cr3 = v;
 }
 
-BOCHSAPI Bit32u cpu_get_cr4(unsigned id) {
-    return BX_CPU(id)->cr4.get32();
+BOCHSAPI Bit64u cpu_get_cr4(unsigned id) {
+    return BX_CPU(id)->cr4.get();
 }
 
-BOCHSAPI void cpu_set_cr4(unsigned id, Bit32u v) {
-    BX_CPU(id)->cr4.set32(v);
+BOCHSAPI void cpu_set_cr4(unsigned id, Bit64u v) {
+    BX_CPU(id)->cr4.set(v);
 }
 
 BOCHSAPI Bit32u cpu_get_cr8(unsigned id) {
