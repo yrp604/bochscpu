@@ -34,7 +34,7 @@ jobs:
         run: |
           gh api repos/yrp604/bochscpu-build/actions/artifacts \
             --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}") | .id' \
-          | head -1 
+          | head -1 \
           | xargs -I {} gh api repos/yrp604/bochscpu-build/actions/artifacts/{}/zip > artifact.zip
           unzip artifact.zip
           ls
@@ -44,7 +44,7 @@ jobs:
       - if: github.ref != 'refs/heads/main' && (matrix.variant.os == 'windows-latest' || matrix.variant.os == 'windows-11-arm')
         run: |
           $artifactId = gh api repos/yrp604/bochscpu-build/actions/artifacts `
-            --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}") | .id | Select-Object -First 1
+            --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}") | .id ' | Select-Object -First 1
           gh api repos/yrp604/bochscpu-build/actions/artifacts/$artifactId/zip > artifact.zip
           Expand-Archive -Path artifact.zip -DestinationPath .
         env:
