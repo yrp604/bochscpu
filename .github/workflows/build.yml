@@ -65,10 +65,14 @@ jobs:
           sudo apt install -y build-essential pkg-config libssl-dev cmake g++
 
       - if: matrix.build == 'debug'
+        env:
+          RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build
 
       - if: matrix.build == 'release'
+        env:
+          RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build --release
           git clone https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
