@@ -29,6 +29,21 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        if: matrix.variant.os != 'windows-latest' && matrix.variant.os != 'windows-11-arm'
+        with:
+          repository: yrp604/bochscpu-build
+          name: bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
+          path: ./lib
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        if: matrix.variant.os == 'windows-latest' && matrix.variant.os == 'windows-11-arm'
+        with:
+          repository: yrp604/bochscpu-build
+          name: bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}
+          path: ./lib
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - if: ${{ !startsWith(matrix.variant.os, 'macos') }}
         run: |
@@ -37,7 +52,6 @@ jobs:
 
       - run: |
           rustup upgrade
-          rustup component add rustfmt
           rustup show
 
       - if: startsWith(matrix.variant.os, 'ubuntu')
