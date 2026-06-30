@@ -38,7 +38,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/download-artifact@v4
-        if: matrix.variant.os == 'windows-latest' && matrix.variant.os == 'windows-11-arm'
+        if: matrix.variant.os == 'windows-latest' || matrix.variant.os == 'windows-11-arm'
         with:
           repository: yrp604/bochscpu-build
           name: bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}
