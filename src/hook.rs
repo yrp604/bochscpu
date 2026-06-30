@@ -50,7 +50,7 @@ impl From<u32> for ResetSource {
 #[repr(u32)]
 pub enum Branch {
     JmpConditionalNotTaken = 10,
-    JmpConditialTaken = 11,
+    JmpConditionalTaken = 11,
     Jmp = 12,
     JmpIndirect = 13,
     Call = 14,
