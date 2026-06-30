@@ -5,6 +5,8 @@ on:
     branches: ['main', 'dev']
   pull_request:
     branches: ['main', 'dev']
+  schedule:
+    - cron: 0 0 * * *
 
 jobs:
   build:
@@ -23,12 +25,12 @@ jobs:
           - {os: macos-latest, arch: arm64}
         build: [debug, release]
 
-    name: ${{ matrix.variant.os }}/${{ matrix.build }}
+    name: ${{ matrix.variant.os }} / ${{ matrix.build }}
     runs-on: ${{ matrix.variant.os }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - if: github.ref != 'refs/heads/main' && (matrix.variant.os != 'windows-latest' && matrix.variant.os != 'windows-11-arm')
         run: |
@@ -79,7 +81,7 @@ jobs:
           cd ../bochscpu-bench ; cargo run --release ; cd ../bochscpu
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: bochscpu_${{ matrix.build }}_${{ matrix.variant.os }}_${{ github.sha }}
           if-no-files-found: warn
@@ -88,9 +90,3 @@ jobs:
             ./target/**/*.exe
             ./target/**/*.pdb
             ./target/**/*.dll
-
-
-
-
-
-
