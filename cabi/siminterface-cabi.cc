@@ -42,7 +42,7 @@ bx_param_string_c *bx_real_sim_c::get_param_string(const char *pname, bx_param_c
 }
 
 extern "C" {
-BOCHSAPI bx_param_enum_c* sim_new_param_enum(const char *name, const char **values,
+bx_param_enum_c* sim_new_param_enum(const char *name, const char **values,
         Bit32u idx)
 {
     return new bx_param_enum_c(
@@ -56,11 +56,11 @@ BOCHSAPI bx_param_enum_c* sim_new_param_enum(const char *name, const char **valu
     );
 }
 
-BOCHSAPI void sim_delete_param_enum(bx_param_enum_c *e) {
+void sim_delete_param_enum(bx_param_enum_c *e) {
     delete e;
 }
 
-BOCHSAPI bx_param_num_c* sim_new_param_num(const char *name, Bit64u min, Bit64u max,
+bx_param_num_c* sim_new_param_num(const char *name, Bit64u min, Bit64u max,
         Bit64u val)
 {
     return new bx_param_num_c(
@@ -74,11 +74,11 @@ BOCHSAPI bx_param_num_c* sim_new_param_num(const char *name, Bit64u min, Bit64u 
     );
 }
 
-BOCHSAPI void sim_delete_param_num(bx_param_num_c *n) {
+void sim_delete_param_num(bx_param_num_c *n) {
     delete n;
 }
 
-BOCHSAPI bx_param_bool_c* sim_new_param_bool(const char *name, bool val)
+bx_param_bool_c* sim_new_param_bool(const char *name, bool val)
 {
     return new bx_param_bool_c(
             NULL,
@@ -89,11 +89,11 @@ BOCHSAPI bx_param_bool_c* sim_new_param_bool(const char *name, bool val)
     );
 }
 
-BOCHSAPI void sim_delete_param_bool(bx_param_bool_c *b) {
+void sim_delete_param_bool(bx_param_bool_c *b) {
     delete b;
 }
 
-BOCHSAPI bx_param_string_c* sim_new_param_string(const char *name, const char *val, unsigned max_sz)
+bx_param_string_c* sim_new_param_string(const char *name, const char *val, unsigned max_sz)
 {
     return new bx_param_string_c(
             NULL,
@@ -105,7 +105,7 @@ BOCHSAPI bx_param_string_c* sim_new_param_string(const char *name, const char *v
     );
 }
 
-BOCHSAPI void sim_delete_param_string(bx_param_string_c *b) {
+void sim_delete_param_string(bx_param_string_c *b) {
     delete b;
 }
 }

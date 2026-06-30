@@ -57,4 +57,4 @@ Bit64u BX_MEMORY_STUB_C::get_memory_len()
     return (BX_MEM_THIS len);
 }
 
-BOCHSAPI BX_MEM_C bx_mem;
+BX_MEM_C bx_mem;
