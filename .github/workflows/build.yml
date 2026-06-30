@@ -35,7 +35,7 @@ jobs:
           repository: yrp604/bochscpu-build
           name: bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}
           path: ./lib
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.BOCHSCPU_BUILD }}
 
       - uses: actions/download-artifact@v4
         if: github.ref != 'refs/heads/main' && matrix.variant.os == 'windows-latest' || matrix.variant.os == 'windows-11-arm'
@@ -43,7 +43,7 @@ jobs:
           repository: yrp604/bochscpu-build
           name: bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}
           path: ./lib
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.BOCHSCPU_BUILD }}
 
       - if: ${{ !startsWith(matrix.variant.os, 'macos') }}
         run: |
