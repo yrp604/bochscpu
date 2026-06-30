@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: ['master']
+    branches: ['main', 'dev']
   pull_request:
-    branches: ['master']
+    branches: ['main', 'dev']
 
 jobs:
   build:
@@ -13,32 +13,53 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-2025
-          # - windows-11-arm  #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
-          - macos-latest
+        variant:
+          - {os: windows-latest, arch: x64, crt: MT}
+          - {os: windows-latest, arch: x64, crt: MD}
+          #- {os: windows-11-arm, arch: arm64, crt: MT} #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
+          #- {os: windows-11-arm, arch: arm64, crt: MD}
+          - {os: ubuntu-latest, arch: x64}
+          - {os: ubuntu-24.04-arm, arch: arm64}
+          - {os: macos-latest, arch: arm64}
         build: [debug, release]
 
-    name: ${{ matrix.os }}/${{ matrix.build }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.variant.os }}/${{ matrix.build }}
+    runs-on: ${{ matrix.variant.os }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
 
-      - if: ${{ !startsWith(matrix.os, 'macos') }}
+      - if: github.ref != 'refs/heads/main' && (matrix.variant.os != 'windows-latest' && matrix.variant.os != 'windows-11-arm')
+        run: |
+          gh api repos/yrp604/bochscpu-build/actions/artifacts \
+            --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}") | .id' \
+          | head -1 \
+          | xargs -I {} gh api repos/yrp604/bochscpu-build/actions/artifacts/{}/zip > artifact.zip
+          unzip artifact.zip
+          ls
+        env:
+          GH_TOKEN: ${{ secrets.BOCHSCPU_BUILD }}
+
+      - if: github.ref != 'refs/heads/main' && (matrix.variant.os == 'windows-latest' || matrix.variant.os == 'windows-11-arm')
+        run: |
+          $artifactId = gh api repos/yrp604/bochscpu-build/actions/artifacts `
+            --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}") | .id ' | Select-Object -First 1
+          gh api repos/yrp604/bochscpu-build/actions/artifacts/$artifactId/zip > artifact.zip
+          Expand-Archive -Path artifact.zip -DestinationPath .
+        env:
+          GH_TOKEN: ${{ secrets.BOCHSCPU_BUILD }}
+
+      - if: ${{ !startsWith(matrix.variant.os, 'macos') }}
         run: |
           # skip `rustup self update` on macos as rustup seems to be installed through brew
           rustup self update
 
       - run: |
           rustup upgrade
-          rustup component add rustfmt
           rustup show
 
-      - if: startsWith(matrix.os, 'ubuntu')
+      - if: startsWith(matrix.variant.os, 'ubuntu')
         run: |
           sudo apt update
           sudo apt install -y build-essential pkg-config libssl-dev cmake g++
@@ -56,7 +77,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v5
         with:
-          name: bochscpu_${{ matrix.build }}_${{ matrix.os }}_${{ github.sha }}
+          name: bochscpu_${{ matrix.build }}_${{ matrix.variant.os }}_${{ github.sha }}
           if-no-files-found: warn
           path: |
             ./target/**/*.rlib
