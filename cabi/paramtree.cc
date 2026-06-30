@@ -1152,8 +1152,10 @@ bx_list_c::bx_list_c(bx_param_c *parent)
   : bx_param_c(SIM->gen_param_id(), "list", "")
 {
   set_type(BXT_LIST);
+  this->unsafe = false;
   this->size = 0;
-  this->list = NULL;
+  this->head = NULL;
+  this->tail = NULL;
   this->parent = NULL;
   if (parent) {
     BX_ASSERT(parent->get_type() == BXT_LIST);
@@ -1161,48 +1163,20 @@ bx_list_c::bx_list_c(bx_param_c *parent)
     this->parent->add(this);
   }
   init("");
-}
-
-bx_list_c::bx_list_c(bx_param_c *parent, const char *name)
-  : bx_param_c(SIM->gen_param_id(), name, "")
-{
-  set_type (BXT_LIST);
-  this->size = 0;
-  this->list = NULL;
-  this->parent = NULL;
-  if (parent) {
-    BX_ASSERT(parent->get_type() == BXT_LIST);
-    this->parent = (bx_list_c *)parent;
-    this->parent->add(this);
-  }
-  this->restore_handler = NULL;
-  init("");
-}
-
-bx_list_c::bx_list_c(bx_param_c *parent, const char *name, const char *title)
-  : bx_param_c(SIM->gen_param_id(), name, "")
-{
-  set_type (BXT_LIST);
-  this->size = 0;
-  this->list = NULL;
-  this->parent = NULL;
-  if (parent) {
-    BX_ASSERT(parent->get_type() == BXT_LIST);
-    this->parent = (bx_list_c *)parent;
-    this->parent->add(this);
-  }
-  this->restore_handler = NULL;
-  init(title);
 }
 
 bx_list_c::bx_list_c(bx_param_c *parent, const char *name, const char *title, bx_param_c **init_list)
   : bx_param_c(SIM->gen_param_id(), name, "")
 {
   set_type(BXT_LIST);
+  this->unsafe = false;
   this->size = 0;
-  this->list = NULL;
-  while (init_list[this->size] != NULL)
-    add(init_list[this->size]);
+  this->head = NULL;
+  this->tail = NULL;
+  if (init_list != NULL) {
+    while (init_list[this->size] != NULL)
+      add(init_list[this->size]);
+  }
   this->parent = NULL;
   if (parent) {
     BX_ASSERT(parent->get_type() == BXT_LIST);
@@ -1215,7 +1189,7 @@ bx_list_c::bx_list_c(bx_param_c *parent, const char *name, const char *title, bx
 
 bx_list_c::~bx_list_c()
 {
-  if (list != NULL) {
+  if (head != NULL) {
     clear();
   }
   delete [] title;
@@ -1253,6 +1227,7 @@ void bx_list_c::set_parent(bx_param_c *newparent)
 bx_list_c* bx_list_c::clone()
 {
   bx_list_c *newlist = new bx_list_c(NULL, name, title);
+  newlist->unsafe_insertions(this->unsafe);
   for (int i=0; i<get_size(); i++)
     newlist->add(get(i));
   newlist->set_options(options);
@@ -1261,20 +1236,20 @@ bx_list_c* bx_list_c::clone()
 
 void bx_list_c::add(bx_param_c *param)
 {
-  if ((get_by_name(param->get_name()) != NULL) && (param->get_parent() == this)) {
+  if (!unsafe && (param->get_parent() == this) && (get_by_name(param->get_name()) != NULL)) {
     BX_PANIC(("parameter '%s' already exists in list '%s'", param->get_name(), this->get_name()));
     return;
   }
   bx_listitem_t *item = new bx_listitem_t;
   item->param = param;
   item->next = NULL;
-  if (list == NULL) {
-    list = item;
+  if (head == NULL) {
+    head = item;
+    tail = item;
   } else {
-    bx_listitem_t *temp = list;
-    while (temp->next)
-      temp = temp->next;
-    temp->next = item;
+    BX_ASSERT(tail != NULL);
+    tail->next = item;
+    tail = item;
   }
   if (runtime_param) {
     param->set_runtime_param(1);
@@ -1286,7 +1261,7 @@ bx_param_c* bx_list_c::get(int index)
 {
   BX_ASSERT(index >= 0 && index < size);
   int i = 0;
-  bx_listitem_t *temp = list;
+  bx_listitem_t *temp = head;
   while (temp != NULL) {
     if (i == index) {
       return temp->param;
@@ -1299,7 +1274,7 @@ bx_param_c* bx_list_c::get(int index)
 
 bx_param_c* bx_list_c::get_by_name(const char *name)
 {
-  bx_listitem_t *temp = list;
+  bx_listitem_t *temp = head;
   while (temp != NULL) {
     bx_param_c *p = temp->param;
     if (!stricmp(name, p->get_name())) {
@@ -1312,7 +1287,7 @@ bx_param_c* bx_list_c::get_by_name(const char *name)
 
 void bx_list_c::reset()
 {
-  bx_listitem_t *temp = list;
+  bx_listitem_t *temp = head;
   while (temp != NULL) {
     temp->param->reset();
     temp = temp->next;
@@ -1321,7 +1296,7 @@ void bx_list_c::reset()
 
 void bx_list_c::clear()
 {
-  bx_listitem_t *temp = list, *next;
+  bx_listitem_t *temp = head, *next;
   while (temp != NULL) {
     if (temp->param->get_parent() == this) {
       delete temp->param;
@@ -1330,7 +1305,8 @@ void bx_list_c::clear()
     delete temp;
     temp = next;
   }
-  list = NULL;
+  head = NULL;
+  tail = NULL;
   size = 0;
 }
 
@@ -1338,16 +1314,19 @@ void bx_list_c::remove(const char *name)
 {
   bx_listitem_t *item, *prev = NULL;
 
-  for (item = list; item; item = item->next) {
+  for (item = head; item; item = item->next) {
     bx_param_c *p = item->param;
     if (!stricmp(name, p->get_name())) {
       if (p->get_parent() == this) {
         delete p;
       }
       if (prev == NULL) {
-        list = item->next;
+        head = item->next;
       } else {
         prev->next = item->next;
+      }
+      if (item->next == NULL) {
+        tail = prev;
       }
       delete item;
       size--;
@@ -1362,7 +1341,7 @@ void bx_list_c::set_runtime_param(bool val)
 {
   runtime_param = val;
   if (runtime_param) {
-    for (bx_listitem_t * item = list; item; item = item->next) {
+    for (bx_listitem_t * item = head; item; item = item->next) {
       item->param->set_runtime_param(1);
     }
   }
