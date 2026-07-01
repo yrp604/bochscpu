@@ -3,8 +3,8 @@
 //! By default, the latest build version will be attempted to be downloaded. A specific version can be
 //! provided through the environment variable `BOCHSCPU_BUILD_VERSION` (e.g. `export BOCHSCPU_BUILD_VERSION=0.5`)
 
-use json;
 use std::env;
+use serde_json::Value;
 
 fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
     let version = version.unwrap_or("latest");
@@ -27,7 +27,7 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
         .unwrap();
     let text = res.text().unwrap();
     dbg!(&text);
-    let js = json::parse(text.as_str()).unwrap();
+    let js: Value = serde_json::from_str(text.as_str()).unwrap();
 
     // Expected filename format for releases (for v0.5+)
 
@@ -47,10 +47,13 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
     let filename: &str = "bochscpu-build-macos-latest-arm64.zip";
 
     let asset = js["assets"]
-        .members()
+        .as_array()
+        .unwrap()
+        .iter()
         .filter(|x| x["name"] == filename)
         .next()
         .unwrap();
+
     (
         asset["name"].to_string(),
         asset["browser_download_url"].to_string(),
