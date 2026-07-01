@@ -3,8 +3,8 @@
 //! By default, the latest build version will be attempted to be downloaded. A specific version can be
 //! provided through the environment variable `BOCHSCPU_BUILD_VERSION` (e.g. `export BOCHSCPU_BUILD_VERSION=0.5`)
 
-use std::env;
 use serde_json::Value;
+use std::env;
 
 fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
     let version = version.unwrap_or("latest");
@@ -12,32 +12,45 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
         .user_agent("Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/15")
         .build()
         .unwrap();
-    let req = cli
-        .get(format!(
-            "https://api.github.com/repos/yrp604/bochscpu-build/releases/{}",
-            version
-        ));
+    let req = cli.get(format!(
+        "https://api.github.com/repos/yrp604/bochscpu-build/releases/{}",
+        version
+    ));
     let auth_req = match env::var("GH_TOKEN") {
         Ok(token) => req.bearer_auth(token),
         Err(_) => req,
     };
 
-    let res = auth_req
-        .send()
-        .unwrap();
+    let res = auth_req.send().unwrap();
     let text = res.text().unwrap();
     dbg!(&text);
     let js: Value = serde_json::from_str(text.as_str()).unwrap();
 
     // Expected filename format for releases (for v0.5+)
 
-    #[cfg(all(target_arch = "x86_64", target_os = "windows", not(target_feature = "crt-static")))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_os = "windows",
+        not(target_feature = "crt-static")
+    ))]
     let filename: &str = "bochscpu-build-windows-latest-x64-MD.zip";
-    #[cfg(all(target_arch = "x86_64", target_os = "windows", target_feature = "crt-static"))]
+    #[cfg(all(
+        target_arch = "x86_64",
+        target_os = "windows",
+        target_feature = "crt-static"
+    ))]
     let filename: &str = "bochscpu-build-windows-latest-x64-MT.zip";
-    #[cfg(all(target_arch = "aarch64", target_os = "windows", not(target_feature = "crt-static")))]
+    #[cfg(all(
+        target_arch = "aarch64",
+        target_os = "windows",
+        not(target_feature = "crt-static")
+    ))]
     let filename: &str = "bochscpu-build-windows-11-arm-arm64-MD.zip";
-    #[cfg(all(target_arch = "aarch64", target_os = "windows", target_feature = "crt-static"))]
+    #[cfg(all(
+        target_arch = "aarch64",
+        target_os = "windows",
+        target_feature = "crt-static"
+    ))]
     let filename: &str = "bochscpu-build-windows-11-arm-arm64-MT.zip";
     #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
     let filename: &str = "bochscpu-build-ubuntu-latest-x64.zip";
