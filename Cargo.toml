@@ -17,8 +17,9 @@ serde = { version = "1", features = ["derive"], optional = true }
 [build-dependencies]
 cc = "1"
 reqwest = { version = "0.13", features = ["blocking"] }
-zip = "8"
 serde_json = "1"
+tempfile = "3"
+zip = "8"
 
 [profile.dev]
 panic = "abort"

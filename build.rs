@@ -5,6 +5,7 @@
 
 use serde_json::Value;
 use std::env;
+use std::fs::File;
 
 fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
     let version = version.unwrap_or("latest");
@@ -73,43 +74,34 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
     )
 }
 
-fn download_bochscpu_build(url: &str) {
+fn download_bochscpu_build(url: &str) -> File {
     let mut response = reqwest::blocking::get(url).unwrap();
-    let config = if cfg!(debug_assertions) {
-        "Debug"
-    } else {
-        "Release"
-    };
 
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let tempfile = std::path::PathBuf::from(format!(
-        "{}/bochscpu-build-{}.zip",
-        std::env::var("TEMP").unwrap_or("/tmp".to_string()),
-        config
-    ));
-    #[cfg(target_os = "windows")]
-    let tempfile = std::path::PathBuf::from(format!(
-        "{}/bochscpu-build-{}.zip",
-        std::env::var("TEMP").unwrap_or("C:\\".to_string()),
-        config
-    ));
+    let mut tempfile = tempfile::tempfile().unwrap();
+    std::io::copy(&mut response, &mut tempfile).unwrap();
 
-    if !tempfile.is_file() {
-        let mut dest_file = std::fs::File::create(&tempfile).unwrap();
-        std::io::copy(&mut response, &mut dest_file).unwrap();
-    }
+    tempfile
+}
 
-    let package_file = std::fs::File::open(&tempfile).unwrap();
-    let mut archive = zip::ZipArchive::new(package_file).unwrap();
+fn unpack_bochscpu_build(tempfile: File) {
+    let mut archive = zip::ZipArchive::new(tempfile).unwrap();
 
     archive.extract(".").unwrap();
 }
 
 fn main() {
     if !std::fs::exists("./lib").unwrap() {
-        let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
-        let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
-        download_bochscpu_build(url.as_str());
+        let zip = match env::var("BOCHSCPU_BUILD_ARTIFACT_PATH") {
+            Ok(path) => {
+                File::open(path).unwrap()
+            }
+            Err(_) => {
+                let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
+                let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
+                download_bochscpu_build(url.as_str())
+            }
+        };
+        unpack_bochscpu_build(zip);
     }
 
     // TODO figure out why the CFLAGS arent being inherited...
