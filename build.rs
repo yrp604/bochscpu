@@ -64,8 +64,7 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
         .as_array()
         .unwrap()
         .iter()
-        .filter(|x| x["name"] == filename)
-        .next()
+        .find(|x| x["name"] == filename)
         .unwrap();
 
     (
@@ -92,9 +91,7 @@ fn unpack_bochscpu_build(tempfile: File) {
 fn main() {
     if !std::fs::exists("./lib").unwrap() {
         let zip = match env::var("BOCHSCPU_BUILD_ARTIFACT_PATH") {
-            Ok(path) => {
-                File::open(path).unwrap()
-            }
+            Ok(path) => File::open(path).unwrap(),
             Err(_) => {
                 let ver = std::env::var("BOCHSCPU_BUILD_VERSION").unwrap_or("latest".to_string());
                 let (_fname, url) = get_bochscpu_build_url(Some(ver.as_str()));
