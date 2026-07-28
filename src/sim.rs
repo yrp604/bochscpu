@@ -61,6 +61,11 @@ fn init_params_enum() -> SyncUnsafeCell<BTreeMap<&'static str, ParamEnum>> {
     );
 
     m.insert(
+        "cpu.cpuid_freq",
+        ParamEnum::new(c"cpuid_freq", &[c"hardware", c"none", c"ips"], 0),
+    );
+
+    m.insert(
         "cpuid.apic",
         ParamEnum::new(c"apic", &[c"legacy", c"xapic", c"xapic_ext", c"x2apic"], 3),
     );
