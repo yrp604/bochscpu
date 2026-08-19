@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - if: github.ref != 'refs/heads/main' && (matrix.variant.os != 'windows-latest' && matrix.variant.os != 'windows-11-arm')
+      - if: github.ref != 'refs/heads/main' && !startsWith(matrix.variant.os, 'windows-')
         run: |
           gh api repos/yrp604/bochscpu-build/actions/artifacts \
             --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}") | .id' \
@@ -43,7 +43,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.BOCHSCPU_BUILD }}
 
-      - if: github.ref != 'refs/heads/main' && (matrix.variant.os == 'windows-latest' || matrix.variant.os == 'windows-11-arm')
+      - if: github.ref != 'refs/heads/main' && startsWith(matrix.variant.os, 'windows-')
         run: |
           $artifactId = gh api repos/yrp604/bochscpu-build/actions/artifacts `
             --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}") | .id ' | Select-Object -First 1
