@@ -68,8 +68,8 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
         .unwrap();
 
     (
-        asset["name"].to_string(),
-        asset["browser_download_url"].to_string(),
+        asset["name"].as_str().unwrap().to_string(),
+        asset["browser_download_url"].as_str().unwrap().to_string(),
     )
 }
 
