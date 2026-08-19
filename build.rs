@@ -74,6 +74,7 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
 }
 
 fn download_bochscpu_build(url: &str) -> File {
+    dbg!(url);
     let mut response = reqwest::blocking::get(url).unwrap();
 
     let mut tempfile = tempfile::tempfile().unwrap();
