@@ -32,7 +32,25 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - if: github.ref != 'refs/heads/main' && !startsWith(matrix.variant.os, 'windows-')
+      # if we're on dev, or PRing into dev then we want current artifacts
+      - name: Determine dependency branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ "${{ github.base_ref }}" = "dev" ] || [ "${{ github.head_ref }}" = "dev" ]; then
+              echo "DEP_BRANCH=dev" >> $GITHUB_ENV
+            else
+              echo "DEP_BRANCH=main" >> $GITHUB_ENV
+            fi
+          else
+            if [ "${{ github.ref_name }}" = "dev" ]; then
+              echo "DEP_BRANCH=dev" >> $GITHUB_ENV
+            else
+              echo "DEP_BRANCH=main" >> $GITHUB_ENV
+            fi
+          fi
+        shell: bash
+
+      - if: env.DEP_BRANCH == 'dev' && !startsWith(matrix.variant.os, 'windows-')
         run: |
           gh api repos/yrp604/bochscpu-build/actions/artifacts \
             --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}") | .id' \
@@ -43,7 +61,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.BOCHSCPU_BUILD }}
 
-      - if: github.ref != 'refs/heads/main' && startsWith(matrix.variant.os, 'windows-')
+      - if: env.DEP_BRANCH == 'dev' && startsWith(matrix.variant.os, 'windows-')
         run: |
           $artifactId = gh api repos/yrp604/bochscpu-build/actions/artifacts `
             --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}") | .id ' | Select-Object -First 1
