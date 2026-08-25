@@ -2,9 +2,11 @@ name: Build
 
 on:
   push:
-    branches: ['master']
+    branches: ['main', 'dev']
   pull_request:
-    branches: ['master']
+    branches: ['main', 'dev']
+  schedule:
+    - cron: 0 0 * * *
 
 jobs:
   build:
@@ -13,59 +15,96 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-2025
-          # - windows-11-arm  #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
-          - macos-latest
+        variant:
+          - {os: windows-latest, arch: x64, crt: MT}
+          - {os: windows-latest, arch: x64, crt: MD}
+          #- {os: windows-11-arm, arch: arm64, crt: MT} #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
+          #- {os: windows-11-arm, arch: arm64, crt: MD}
+          - {os: ubuntu-latest, arch: x64}
+          - {os: ubuntu-24.04-arm, arch: arm64}
+          - {os: macos-latest, arch: arm64}
         build: [debug, release]
 
-    name: ${{ matrix.os }}/${{ matrix.build }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.variant.os }} / ${{ matrix.build }}
+    runs-on: ${{ matrix.variant.os }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - if: ${{ !startsWith(matrix.os, 'macos') }}
+      # if we're on dev, or PRing into dev then we want current artifacts
+      - name: Determine dependency branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ "${{ github.base_ref }}" = "dev" ] || [ "${{ github.head_ref }}" = "dev" ]; then
+              echo "DEP_BRANCH=dev" >> $GITHUB_ENV
+            else
+              echo "DEP_BRANCH=main" >> $GITHUB_ENV
+            fi
+          else
+            if [ "${{ github.ref_name }}" = "dev" ]; then
+              echo "DEP_BRANCH=dev" >> $GITHUB_ENV
+            else
+              echo "DEP_BRANCH=main" >> $GITHUB_ENV
+            fi
+          fi
+        shell: bash
+
+      - if: env.DEP_BRANCH == 'dev' && !startsWith(matrix.variant.os, 'windows-')
+        run: |
+          gh api repos/yrp604/bochscpu-build/actions/artifacts \
+            --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}") | .id' \
+          | head -1 \
+          | xargs -I {} gh api repos/yrp604/bochscpu-build/actions/artifacts/{}/zip > artifact.zip
+          unzip artifact.zip
+          ls
+        env:
+          GH_TOKEN: ${{ secrets.BOCHSCPU_BUILD }}
+
+      - if: env.DEP_BRANCH == 'dev' && startsWith(matrix.variant.os, 'windows-')
+        run: |
+          $artifactId = gh api repos/yrp604/bochscpu-build/actions/artifacts `
+            --jq '.artifacts[] | select(.name=="bochscpu-build-${{ matrix.variant.os }}-${{ matrix.variant.arch }}-${{ matrix.variant.crt }}") | .id ' | Select-Object -First 1
+          gh api repos/yrp604/bochscpu-build/actions/artifacts/$artifactId/zip > artifact.zip
+          Expand-Archive -Path artifact.zip -DestinationPath .
+        env:
+          GH_TOKEN: ${{ secrets.BOCHSCPU_BUILD }}
+
+      - if: ${{ !startsWith(matrix.variant.os, 'macos') }}
         run: |
           # skip `rustup self update` on macos as rustup seems to be installed through brew
           rustup self update
 
       - run: |
           rustup upgrade
-          rustup component add rustfmt
           rustup show
 
-      - if: startsWith(matrix.os, 'ubuntu')
+      - if: startsWith(matrix.variant.os, 'ubuntu')
         run: |
           sudo apt update
           sudo apt install -y build-essential pkg-config libssl-dev cmake g++
 
       - if: matrix.build == 'debug'
+        env:
+          RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build
 
       - if: matrix.build == 'release'
+        env:
+          RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build --release
           git clone https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
           cd ../bochscpu-bench ; cargo run --release ; cd ../bochscpu
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
-          name: bochscpu_${{ matrix.build }}_${{ matrix.os }}_${{ github.sha }}
+          name: bochscpu_${{ matrix.build }}_${{ matrix.variant.os }}_${{ github.sha }}
           if-no-files-found: warn
           path: |
             ./target/**/*.rlib
             ./target/**/*.exe
             ./target/**/*.pdb
             ./target/**/*.dll
-
-
-
-
-
-

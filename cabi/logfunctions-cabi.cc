@@ -114,4 +114,4 @@ void logfunctions::panic(const char *fmt, ...) {
 
 void logfunctions::put(const char *p, const char *q) {}
 
-BOCHSAPI class logfunctions *genlog = NULL;
+class logfunctions *genlog = NULL;
