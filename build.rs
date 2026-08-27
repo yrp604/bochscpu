@@ -5,26 +5,29 @@
 
 use serde_json::Value;
 use std::env;
+use std::io;
 use std::fs::File;
 
 fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
     let version = version.unwrap_or("latest");
-    let cli = reqwest::blocking::ClientBuilder::new()
-        .user_agent("Mozilla/5.0 (platform; rv:gecko-version) Gecko/gecko-trail Firefox/15")
-        .build()
-        .unwrap();
-    let req = cli.get(format!(
+
+    let url = format!(
         "https://api.github.com/repos/yrp604/bochscpu-build/releases/{}",
         version
-    ));
-    let auth_req = match env::var("GH_TOKEN") {
-        Ok(token) => req.bearer_auth(token),
-        Err(_) => req,
-    };
+    );
 
-    let res = auth_req.send().unwrap();
-    let text = res.text().unwrap();
+    let mut req = ureq::get(&url)
+        .header("User-Agent", "Mozilla/5.0");
+
+    if let Ok(token) = std::env::var("GH_TOKEN") {
+        req = req.header("Authorization", &format!("Bearer {}", token));
+    }
+
+    let res = req.call().unwrap();
+    let text = res.into_body().read_to_string().unwrap();
+
     dbg!(&text);
+
     let js: Value = serde_json::from_str(text.as_str()).unwrap();
 
     // Expected filename format for releases (for v0.5+)
@@ -75,10 +78,13 @@ fn get_bochscpu_build_url(version: Option<&str>) -> (String, String) {
 
 fn download_bochscpu_build(url: &str) -> File {
     dbg!(url);
-    let mut response = reqwest::blocking::get(url).unwrap();
+
+    let response = ureq::get(url).call().unwrap();
+    let mut reader = response.into_body().into_reader();
 
     let mut tempfile = tempfile::tempfile().unwrap();
-    std::io::copy(&mut response, &mut tempfile).unwrap();
+
+    io::copy(&mut reader, &mut tempfile).unwrap();
 
     tempfile
 }
