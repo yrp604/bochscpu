@@ -19,7 +19,7 @@ cc = "1"
 ureq = "3"
 serde_json = "1"
 tempfile = "3"
-zip = "8"
+zip = "9"
 
 [profile.dev]
 panic = "abort"
