@@ -258,6 +258,7 @@ pub trait Hooks {
         _len: usize,
         _memty: MemType,
         _rw: MemAccess,
+        _data: &[u8],
     ) {
     }
     fn phy_access(
@@ -267,6 +268,7 @@ pub trait Hooks {
         _len: usize,
         _memty: MemType,
         _rw: MemAccess,
+        _data: &[u8],
     ) {
     }
 
@@ -669,11 +671,14 @@ unsafe extern "C-unwind" fn bx_instr_lin_access(
     len: u32,
     memtype: u32,
     rw: u32,
+    data: *const u8,
 ) {
     unsafe {
-        hooks()
-            .iter_mut()
-            .for_each(|x| x.lin_access(cpu, lin, phy, len as usize, memtype.into(), rw.into()));
+        let data = slice::from_raw_parts(data, len as usize);
+
+        hooks().iter_mut().for_each(|x| {
+            x.lin_access(cpu, lin, phy, len as usize, memtype.into(), rw.into(), data)
+        });
 
         if let Some(e) = hook_event(cpu).take() {
             match e {
@@ -693,11 +698,14 @@ unsafe extern "C-unwind" fn bx_instr_phy_access(
     len: u32,
     memtype: u32,
     rw: u32,
+    data: *const u8,
 ) {
     unsafe {
-        hooks()
-            .iter_mut()
-            .for_each(|x| x.phy_access(cpu, phy, len as usize, memtype.into(), rw.into()));
+        let data = slice::from_raw_parts(data, len as usize);
+
+        hooks().iter_mut().for_each(|x| {
+            x.phy_access(cpu, phy, len as usize, memtype.into(), rw.into(), data)
+        });
 
         if let Some(e) = hook_event(cpu).take() {
             match e {
