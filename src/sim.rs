@@ -94,6 +94,7 @@ fn init_params_num() -> SyncUnsafeCell<BTreeMap<&'static str, ParamNum>> {
         ParamNum::new(c"n_processors", 1, NUM_CPUS as u64, 1),
     );
     m.insert("cpu.quantum", ParamNum::new(c"quantum", 1, 32, 16));
+    m.insert("cpu.maxphyaddr", ParamNum::new(c"maxphyaddr", 36, 52, 40));
 
     m.insert("cpuid.level", ParamNum::new(c"level", 5, 6, 6));
     m.insert("cpuid.vmx", ParamNum::new(c"vmx", 0, 2, 2));
