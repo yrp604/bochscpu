@@ -95,7 +95,7 @@ jobs:
           RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build --release
-          git clone https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
+          git clone -b ${{ env.DEP_BRANCH == 'dev' && 'dev' || 'master' }} https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
           cd ../bochscpu-bench ; cargo run --release ; cd ../bochscpu
           
       - name: Upload Artifact
