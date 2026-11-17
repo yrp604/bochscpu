@@ -37,6 +37,8 @@ void bx_pc_system_c::countdownEvent(void)
 {
     bx_pc_system.currCountdown = 1;
 }
-void bx_pc_system_c::invlpg(bx_address addr) { assert(false); }
+#if BX_SUPPORT_MONITOR_MWAIT
+void bx_pc_system_c::TLB_disable_host_ptr(bx_phy_address paddr) { assert(false); }
+#endif
 
 bx_pc_system_c bx_pc_system;
