@@ -108,6 +108,9 @@ fn main() {
         unpack_bochscpu_build(zip);
     }
 
+    let out_dir = env::var("OUT_DIR").unwrap();
+    println!("cargo:rustc-link-search=native={}", out_dir);
+
     // TODO figure out why the CFLAGS arent being inherited...
     // .flag("-fsanitize=address").flag("-Wno-unused-parameter")
     //
@@ -116,6 +119,7 @@ fn main() {
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -124,6 +128,7 @@ fn main() {
         .compile("cpu-cabi");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -131,10 +136,11 @@ fn main() {
         .file("cabi/cpu-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("cpu-cabi");
-    println!("cargo:rustc-link-lib=static=cpu-cabi");
+    println!("cargo:rustc-link-lib=static:+whole-archive=cpu-cabi");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -143,6 +149,7 @@ fn main() {
         .compile("mem-cabi");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -150,10 +157,10 @@ fn main() {
         .file("cabi/mem-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("mem-cabi");
-    println!("cargo:rustc-link-lib=static=mem-cabi");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -162,6 +169,7 @@ fn main() {
         .compile("instr-cabi");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -169,12 +177,13 @@ fn main() {
         .file("cabi/instr-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("instr-cabi");
-    println!("cargo:rustc-link-lib=static=instr-cabi");
+    println!("cargo:rustc-link-lib=static:+whole-archive=instr-cabi");
 
     match env::var("PROFILE").unwrap().as_ref() {
         "release" => {
             #[cfg(not(target_os = "windows"))]
             cc::Build::new()
+        .cargo_metadata(false)
                 .define("RUST_CC_RELEASE", None)
                 .cpp(true)
                 .flag_if_supported("-Wno-unused-parameter")
@@ -185,6 +194,7 @@ fn main() {
 
             #[cfg(target_os = "windows")]
             cc::Build::new()
+        .cargo_metadata(false)
                 .define("RUST_CC_RELEASE", None)
                 .define("WIN32", None)
                 .cpp(true)
@@ -197,6 +207,7 @@ fn main() {
         _ => {
             #[cfg(not(target_os = "windows"))]
             cc::Build::new()
+        .cargo_metadata(false)
                 .cpp(true)
                 .flag_if_supported("-Wno-unused-parameter")
                 .include("bochs")
@@ -206,6 +217,7 @@ fn main() {
 
             #[cfg(target_os = "windows")]
             cc::Build::new()
+        .cargo_metadata(false)
                 .cpp(true)
                 .define("WIN32", None)
                 .include("bochs")
@@ -215,10 +227,12 @@ fn main() {
                 .compile("logfunctions-cabi");
         }
     }
-    println!("cargo:rustc-link-lib=static=logfunctions-cabi");
+    // link-lib directive emitted later: see note near the end of this
+    // function about mem-cabi/devices-cabi/logfunctions-cabi ordering.
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -227,6 +241,7 @@ fn main() {
         .compile("siminterface-cabi");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -234,10 +249,11 @@ fn main() {
         .file("cabi/siminterface-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("siminterface-cabi");
-    println!("cargo:rustc-link-lib=static=siminterface-cabi");
+    println!("cargo:rustc-link-lib=static:+whole-archive=siminterface-cabi");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -247,6 +263,7 @@ fn main() {
         .compile("paramtree");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -255,10 +272,11 @@ fn main() {
         .file("cabi/paramtree.cc")
         .static_crt(CRT_STATIC)
         .compile("paramtree");
-    println!("cargo:rustc-link-lib=static=paramtree");
+    println!("cargo:rustc-link-lib=static:+whole-archive=paramtree");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -267,6 +285,7 @@ fn main() {
         .compile("devices-cabi");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -274,10 +293,10 @@ fn main() {
         .file("cabi/devices-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("devices-cabi");
-    println!("cargo:rustc-link-lib=static=devices-cabi");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -286,6 +305,7 @@ fn main() {
         .compile("dbg");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -293,10 +313,11 @@ fn main() {
         .file("cabi/dbg.cc")
         .static_crt(CRT_STATIC)
         .compile("dbg");
-    println!("cargo:rustc-link-lib=static=dbg");
+    println!("cargo:rustc-link-lib=static:+whole-archive=dbg");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -305,6 +326,7 @@ fn main() {
         .compile("gui");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -312,10 +334,11 @@ fn main() {
         .file("cabi/gui.cc")
         .static_crt(CRT_STATIC)
         .compile("gui");
-    println!("cargo:rustc-link-lib=static=gui");
+    println!("cargo:rustc-link-lib=static:+whole-archive=gui");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -324,6 +347,7 @@ fn main() {
         .compile("system-cabi");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -331,10 +355,11 @@ fn main() {
         .file("cabi/system-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("system-cabi");
-    println!("cargo:rustc-link-lib=static=system-cabi");
+    println!("cargo:rustc-link-lib=static:+whole-archive=system-cabi");
 
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -343,6 +368,7 @@ fn main() {
         .compile("apic");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -350,12 +376,13 @@ fn main() {
         .file("cabi/apic.cc")
         .static_crt(CRT_STATIC)
         .compile("apic");
-    println!("cargo:rustc-link-lib=static=apic");
+    println!("cargo:rustc-link-lib=static:+whole-archive=apic");
 
     // intentionally not linked, just compiled to get the C_ASSERTs to check
     // the mappings
     #[cfg(not(target_os = "windows"))]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .flag_if_supported("-Wno-unused-parameter")
         .include("bochs")
@@ -364,6 +391,7 @@ fn main() {
         .compile("opcode");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -371,7 +399,7 @@ fn main() {
         .file("cabi/opcode-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("opcode");
-    println!("cargo:rustc-link-lib=static=opcode");
+    println!("cargo:rustc-link-lib=static:+whole-archive=opcode");
 
     // rebuild if any file in cabi changes
     println!("cargo:rerun-if-changed=cabi");
@@ -380,9 +408,18 @@ fn main() {
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     println!("cargo:rustc-link-search={}/lib", manifest_dir);
 
-    println!("cargo:rustc-link-lib=static=cpu");
-    println!("cargo:rustc-link-lib=static=fpu");
-    println!("cargo:rustc-link-lib=static=cpudb");
-    println!("cargo:rustc-link-lib=static=avx");
-    println!("cargo:rustc-link-lib=static=softfloat");
+    println!("cargo:rustc-link-lib=static:+whole-archive=cpu");
+    println!("cargo:rustc-link-lib=static:+whole-archive=fpu");
+    println!("cargo:rustc-link-lib=static:+whole-archive=cpudb");
+    println!("cargo:rustc-link-lib=static:+whole-archive=avx");
+    println!("cargo:rustc-link-lib=static:+whole-archive=softfloat");
+    println!("cargo:rustc-link-lib=static:+whole-archive=mem-cabi");
+    println!("cargo:rustc-link-lib=static:+whole-archive=devices-cabi");
+    println!("cargo:rustc-link-lib=static:+whole-archive=logfunctions-cabi");
+
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    println!("cargo:rustc-link-lib=dylib=stdc++");
+
+    #[cfg(target_os = "macos")]
+    println!("cargo:rustc-link-lib=dylib=c++");
 }
