@@ -32,6 +32,28 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.cache/pip/
+            target/
+          key: lint-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.cache/pip/
+            target/
+          key: bxcpu-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       # if we're on dev, or PRing into dev then we want current artifacts
       - name: Determine dependency branch
         run: |
