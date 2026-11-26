@@ -387,6 +387,7 @@ fn main() {
         .compile("opcode");
     #[cfg(target_os = "windows")]
     cc::Build::new()
+        .cargo_metadata(false)
         .cpp(true)
         .define("WIN32", None)
         .include("bochs")
@@ -394,8 +395,6 @@ fn main() {
         .file("cabi/opcode-cabi.cc")
         .static_crt(CRT_STATIC)
         .compile("opcode");
-    #[cfg(not(target_os = "windows"))]
-    println!("cargo:rustc-link-lib=static:+whole-archive=opcode");
 
     // rebuild if any file in cabi changes
     println!("cargo:rerun-if-changed=cabi");
