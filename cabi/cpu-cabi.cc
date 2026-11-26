@@ -1,3 +1,4 @@
+#include <atomic>
 #include <cstdint>
 #include <new>
 
@@ -8,7 +9,7 @@
 
 typedef BX_CPU_C *BX_CPU_C_PTR;
 
-extern bool bx_log_exiting;
+extern std::atomic<bool> bx_log_exiting;
 
 extern "C" {
 void cpu_loop(unsigned id) {

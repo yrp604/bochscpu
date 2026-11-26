@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include <atomic>
+
 #include "bochs.h"
 
 namespace rust {
@@ -33,7 +35,7 @@ int logfunctions::default_onoff[N_LOGLEV] =
 
 // set once the process starts exiting. static destructors (e.g. bx_cpu's)
 // still log, but by then the rust logger's thread locals may be gone
-bool bx_log_exiting = false;
+std::atomic<bool> bx_log_exiting{false};
 
 logfunctions::logfunctions(void) {}
 logfunctions::~logfunctions(void) {}
