@@ -40,6 +40,13 @@ void cpu_delete(unsigned id) {
     free(BX_CPU(id));
 
     BX_CPU(id) = NULL;
+#else
+    // bx_cpu is static, so destroy it to free what initialize() allocated,
+    // then rebuild it zeroed so the next cpu_new() (and the destructor at
+    // exit) see a fresh cpu
+    bx_cpu.~BX_CPU_C();
+    memset((void *)&bx_cpu, 0, sizeof(BX_CPU_C));
+    new (&bx_cpu) BX_CPU_C(id);
 #endif
 }
 
