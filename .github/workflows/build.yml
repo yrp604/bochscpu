@@ -18,8 +18,8 @@ jobs:
         variant:
           - {os: windows-latest, arch: x64, crt: MT}
           - {os: windows-latest, arch: x64, crt: MD}
-          #- {os: windows-11-arm, arch: arm64, crt: MT} #   C:\code\bochscpu\bochs\config.h(94): fatal error C1189: #error:  Bochs not configured for MSVC WIN32
-          #- {os: windows-11-arm, arch: arm64, crt: MD}
+          - {os: windows-11-arm, arch: arm64, crt: MT}
+          - {os: windows-11-arm, arch: arm64, crt: MD}
           - {os: ubuntu-latest, arch: x64}
           - {os: ubuntu-24.04-arm, arch: arm64}
           - {os: macos-latest, arch: arm64}
@@ -31,6 +31,18 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
+
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.cache/pip/
+            target/
+          key: bxcpu-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       # if we're on dev, or PRing into dev then we want current artifacts
       - name: Determine dependency branch
@@ -89,15 +101,17 @@ jobs:
           RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build
+          git clone -b ${{ env.DEP_BRANCH == 'dev' && 'dev' || 'master' }} https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
+          cd ../bochscpu-bench ; cargo run --release ; cd ../bochscpu
 
       - if: matrix.build == 'release'
         env:
           RUSTFLAGS: ${{ matrix.variant.crt == 'MT' && '-C target-feature=+crt-static' || '' }}
         run: |
           cargo build --release
-          git clone https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
+          git clone -b ${{ env.DEP_BRANCH == 'dev' && 'dev' || 'master' }} https://github.com/yrp604/bochscpu-bench ../bochscpu-bench
           cd ../bochscpu-bench ; cargo run --release ; cd ../bochscpu
-          
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:

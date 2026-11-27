@@ -1,3 +1,4 @@
+#include <atomic>
 #include <cstdint>
 #include <new>
 
@@ -8,6 +9,7 @@
 
 typedef BX_CPU_C *BX_CPU_C_PTR;
 
+extern std::atomic<bool> bx_log_exiting;
 
 extern "C" {
 void cpu_loop(unsigned id) {
@@ -15,6 +17,14 @@ void cpu_loop(unsigned id) {
 }
 
 void cpu_new(unsigned id) {
+    // registered after bx_cpu is constructed, so this runs before its
+    // destructor at exit
+    static bool exit_hook = false;
+    if (!exit_hook) {
+        exit_hook = true;
+        atexit([] { bx_log_exiting = true; });
+    }
+
 #if BX_SUPPORT_SMP
     // bochs assumes that all things are init'd to zero, which breaks ASan so
     // we use placement new to zero the mem
@@ -40,6 +50,13 @@ void cpu_delete(unsigned id) {
     free(BX_CPU(id));
 
     BX_CPU(id) = NULL;
+#else
+    // bx_cpu is static, so destroy it to free what initialize() allocated,
+    // then rebuild it zeroed so the next cpu_new() (and the destructor at
+    // exit) see a fresh cpu
+    bx_cpu.~BX_CPU_C();
+    memset((void *)&bx_cpu, 0, sizeof(BX_CPU_C));
+    new (&bx_cpu) BX_CPU_C(id);
 #endif
 }
 

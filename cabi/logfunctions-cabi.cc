@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include <atomic>
+
 #include "bochs.h"
 
 namespace rust {
@@ -31,11 +33,18 @@ int logfunctions::default_onoff[N_LOGLEV] =
   ACT_FATAL    // on panic, quit
 };
 
+// set once the process starts exiting. static destructors (e.g. bx_cpu's)
+// still log, but by then the rust logger's thread locals may be gone
+std::atomic<bool> bx_log_exiting{false};
+
 logfunctions::logfunctions(void) {}
 logfunctions::~logfunctions(void) {}
 
 void logfunctions::error(const char *fmt, ...) {
 #ifndef RUST_CC_RELEASE
+	if (bx_log_exiting)
+		return;
+
 	char buf[0x1000];
 
 	va_list args;
@@ -62,6 +71,9 @@ void logfunctions::fatal1(const char *fmt, ...) {
 
 void logfunctions::info(const char *fmt, ...) {
 #ifndef RUST_CC_RELEASE
+	if (bx_log_exiting)
+		return;
+
 	char buf[0x1000];
 
 	va_list args;
@@ -75,6 +87,9 @@ void logfunctions::info(const char *fmt, ...) {
 
 void logfunctions::ldebug(const char *fmt, ...) {
 #ifndef RUST_CC_RELEASE
+	if (bx_log_exiting)
+		return;
+
 	char buf[0x1000];
 
 	va_list args;
@@ -88,6 +103,9 @@ void logfunctions::ldebug(const char *fmt, ...) {
 
 void logfunctions::lwarn(const char *fmt, ...) {
 #ifndef RUST_CC_RELEASE
+	if (bx_log_exiting)
+		return;
+
 	char buf[0x1000];
 
 	va_list args;
